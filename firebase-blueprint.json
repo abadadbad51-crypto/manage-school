@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a student, teacher, admin, or parent.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "teacher", "student", "parent"] },
+        "studentId": { "type": "string", "description": "Optional, for students/parents" },
+        "classId": { "type": "string", "description": "Optional, for students" },
+        "parentName": { "type": "string", "description": "Name of the student's parent or guardian" },
+        "parentPhone": { "type": "string", "description": "Phone number of the student's parent or guardian" },
+        "specialization": { "type": "string", "description": "Student specialization or track (e.g., Scientific, Literary)" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "A school class (e.g., Grade 10A).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "grade": { "type": "string" },
+        "section": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "grade", "teacherId"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A school subject.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" }
+      },
+      "required": ["name", "code"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance record.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent", "late"] }
+      },
+      "required": ["studentId", "classId", "date", "status"]
+    },
+    "Grade": {
+      "title": "Grade",
+      "description": "Student academic grade.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "score": { "type": "number" },
+        "term": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "subjectId", "score", "term"]
+    },
+    "Fee": {
+      "title": "Fee",
+      "description": "School fee payment record.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue"] },
+        "dueDate": { "type": "string", "format": "date" },
+        "paidDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "amount", "status", "dueDate"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notification.",
+      "type": "object",
+      "properties": {
+        "recipientId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "success", "urgent"] },
+        "date": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["recipientId", "title", "message", "date"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Class schedule entry.",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string" },
+        "day": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"] },
+        "subject": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "room": { "type": "string" }
+      },
+      "required": ["classId", "day", "subject", "startTime", "endTime"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Student assignment or task.",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "submitted", "graded"] },
+        "subject": { "type": "string" }
+      },
+      "required": ["classId", "title", "dueDate", "status"]
+    },
+    "Resource": {
+      "title": "Resource",
+      "description": "Educational resource (link or file).",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string", "enum": ["pdf", "video", "link", "doc"] }
+      },
+      "required": ["subject", "title", "url", "type"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Direct message between users.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["senderId", "receiverId", "content", "timestamp"]
+    },
+    "TeacherAvailability": {
+      "title": "Teacher Availability",
+      "description": "Teacher's preferred, suitable, and unsuitable times.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "availability": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "day": { "type": "string", "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"] },
+              "slot": { "type": "string", "description": "e.g., '08:00-09:00'" },
+              "type": { "type": "string", "enum": ["suitable", "unsuitable", "preferred"] }
+            },
+            "required": ["day", "slot", "type"]
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "availability"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/classes/{classId}": { "schema": "Class", "description": "School classes" },
+    "/subjects/{subjectId}": { "schema": "Subject", "description": "School subjects" },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Attendance records" },
+    "/grades/{gradeId}": { "schema": "Grade", "description": "Student grades" },
+    "/fees/{feeId}": { "schema": "Fee", "description": "Fee records" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "Notifications" },
+    "/schedules/{scheduleId}": { "schema": "Schedule", "description": "Class schedules" },
+    "/assignments/{assignmentId}": { "schema": "Assignment", "description": "Assignments" },
+    "/resources/{resourceId}": { "schema": "Resource", "description": "Educational resources" },
+    "/messages/{messageId}": { "schema": "Message", "description": "Direct messages" },
+    "/teacherAvailability/{teacherId}": { "schema": "TeacherAvailability", "description": "Teacher availability preferences" }
+  }
+}

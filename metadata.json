@@ -1,0 +1,9 @@
+{
+  "name": "EduManage Pro - نظام إدارة المدارس المتكامل",
+  "description": "نظام شامل لإدارة المدارس يغطي شؤون الطلاب، المعلمين، الجداول الدراسية، الحضور، الدرجات، والمالية مع واجهة مستخدم متطورة.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
