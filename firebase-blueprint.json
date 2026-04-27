@@ -167,6 +167,48 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["teacherId", "availability"]
+    },
+    "BusRoute": {
+      "title": "Bus Route",
+      "description": "School bus route information.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "driverName": { "type": "string" },
+        "driverPhone": { "type": "string" },
+        "supervisorName": { "type": "string" },
+        "stops": { "type": "array", "items": { "type": "string" } },
+        "capacity": { "type": "number" }
+      },
+      "required": ["name", "driverName", "capacity"]
+    },
+    "InventoryItem": {
+      "title": "Inventory Item",
+      "description": "Books, uniforms, and other school items.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["book", "uniform", "other"] },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "type", "price", "stock"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "itemId": { "type": "string" },
+        "type": { "type": "string", "enum": ["fee", "purchase"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "card", "online"] },
+        "invoiceNumber": { "type": "string" }
+      },
+      "required": ["studentId", "type", "amount", "date", "paymentMethod", "invoiceNumber"]
     }
   },
   "firestore": {
@@ -181,6 +223,9 @@
     "/assignments/{assignmentId}": { "schema": "Assignment", "description": "Assignments" },
     "/resources/{resourceId}": { "schema": "Resource", "description": "Educational resources" },
     "/messages/{messageId}": { "schema": "Message", "description": "Direct messages" },
-    "/teacherAvailability/{teacherId}": { "schema": "TeacherAvailability", "description": "Teacher availability preferences" }
+    "/teacherAvailability/{teacherId}": { "schema": "TeacherAvailability", "description": "Teacher availability preferences" },
+    "/busRoutes/{routeId}": { "schema": "BusRoute", "description": "School bus routes" },
+    "/inventory/{itemId}": { "schema": "InventoryItem", "description": "Inventory items" },
+    "/transactions/{transactionId}": { "schema": "Transaction", "description": "Financial transactions" }
   }
 }

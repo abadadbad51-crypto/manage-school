@@ -3,11 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>EduManage Pro - نظام إدارة المدارس</title>
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        console.error("Global Error:", msg, url, line, col, error);
+        var root = document.getElementById('root');
+        if (root && root.innerHTML === "") {
+          root.innerHTML = '<div style="padding: 20px; color: #e11d48; background: #fff1f2; border: 1px solid #fda4af; rounded: 12px; margin: 20px; font-family: sans-serif; text-align: center;">' +
+            '<h2 style="margin-top: 0;">حدث خطأ أثناء تشغيل التطبيق</h2>' +
+            '<p style="font-size: 14px;">' + msg + '</p>' +
+            '<button onclick="window.location.reload()" style="background: #e11d48; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">إعادة تحميل</button>' +
+            '</div>';
+        }
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
 
