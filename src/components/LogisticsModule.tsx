@@ -42,7 +42,7 @@ export const LogisticsModule: React.FC<LogisticsModuleProps> = ({ initialTab = '
           إدارة الحافلات والخدمات
         </h2>
         
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
+        <div className="flex bg-slate-100 dark:bg-[#202022] p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
           <div className="flex min-w-max">
             {[
               { id: 'buses', label: 'الحافلات', icon: Truck },
@@ -56,7 +56,7 @@ export const LogisticsModule: React.FC<LogisticsModuleProps> = ({ initialTab = '
                   "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap",
                   activeSubTab === tab.id 
                     ? "bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-sm" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
                 <tab.icon size={16} className="md:size-[18px]" />
@@ -86,10 +86,10 @@ const BusesSection = () => {
           <Card key={i} className="group hover:shadow-xl transition-all duration-300">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-2xl">
+                <div className="p-3 bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 rounded-2xl">
                   <Truck size={24} />
                 </div>
-                <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-full uppercase tracking-wider">نشط الآن</span>
+                <span className="text-[10px] font-black bg-slate-100 dark:bg-[#202022] text-slate-500 px-3 py-1 rounded-full uppercase tracking-wider">نشط الآن</span>
               </div>
               
               <h4 className="text-xl font-black text-slate-800 dark:text-white mb-4">{bus.name}</h4>
@@ -98,17 +98,17 @@ const BusesSection = () => {
                 <div className="flex items-center gap-3 text-sm">
                   <Navigation size={16} className="text-slate-400" />
                   <span className="text-slate-500">السائق:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">{bus.driver}</span>
+                  <span className="font-bold text-slate-700 dark:text-zinc-300">{bus.driver}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <ShieldCheck size={16} className="text-slate-400" />
                   <span className="text-slate-500">المشرفة:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">{bus.supervisor}</span>
+                  <span className="font-bold text-slate-700 dark:text-zinc-300">{bus.supervisor}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Phone size={16} className="text-slate-400" />
                   <span className="text-slate-500">رقم التواصل:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">{bus.phone}</span>
+                  <span className="font-bold text-slate-700 dark:text-zinc-300">{bus.phone}</span>
                 </div>
               </div>
               
@@ -117,7 +117,7 @@ const BusesSection = () => {
                   <span className="text-slate-500">سعة الركوب</span>
                   <span className="text-slate-800 dark:text-white">{bus.students}/{bus.capacity} طالباً</span>
                 </div>
-                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${(bus.students / bus.capacity) * 100}%` }}
@@ -130,15 +130,15 @@ const BusesSection = () => {
               </div>
             </div>
             
-            <div className="border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 flex gap-2">
+            <div className="border-t border-slate-100 dark:border-white/5 p-4 bg-slate-50/50 dark:bg-[#202022]/30 flex gap-2">
               <button className="flex-1 text-xs font-bold text-blue-600 hover:underline">تعديل المسار</button>
               <button className="flex-1 text-xs font-bold text-orange-600 hover:underline">تتبع الآن</button>
             </div>
           </Card>
         ))}
         
-        <button className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] flex flex-col items-center justify-center gap-4 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all group min-h-[300px]">
-          <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-3xl group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 transition-all">
+        <button className="border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-4 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all group min-h-[300px]">
+          <div className="p-4 bg-slate-50 dark:bg-[#202022] rounded-3xl group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 transition-all">
             <Plus size={32} />
           </div>
           <span className="font-bold">إضافة حافلة جديدة</span>
@@ -151,7 +151,7 @@ const BusesSection = () => {
 const SubscriptionsSection = () => {
   return (
     <Card className="overflow-hidden">
-      <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="p-6 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h4 className="font-black text-slate-800 dark:text-white">الطلاب المشتركين في النقل</h4>
         <div className="flex gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
@@ -159,7 +159,7 @@ const SubscriptionsSection = () => {
             <input 
               type="text" 
               placeholder="البحث عن طالب..."
-              className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 pr-10 pl-4 text-sm focus:ring-2 focus:ring-orange-500/20 outline-none"
+              className="w-full bg-slate-50 dark:bg-[#202022] border-none rounded-xl py-2 pr-10 pl-4 text-sm focus:ring-2 focus:ring-orange-500/20 outline-none"
             />
           </div>
           <button className="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-orange-100 dark:shadow-none">
@@ -170,7 +170,7 @@ const SubscriptionsSection = () => {
       
       <div className="overflow-x-auto hidden sm:block">
         <table className="w-full text-right">
-          <thead className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
+          <thead className="bg-slate-50/50 dark:bg-[#202022]/50 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
             <tr>
               <th className="px-6 py-4">الطالب</th>
               <th className="px-6 py-4">الحافلة</th>
@@ -184,7 +184,7 @@ const SubscriptionsSection = () => {
               <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs">ط</div>
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#202022] flex items-center justify-center font-bold text-xs">ط</div>
                     <div>
                       <p className="text-sm font-bold text-slate-800 dark:text-white">طالب مشترك {i}</p>
                       <p className="text-[10px] text-slate-400">#STD-00{i}</p>
@@ -192,11 +192,11 @@ const SubscriptionsSection = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">حافلة شمال الرياض</span>
+                  <span className="text-sm text-slate-600 dark:text-zinc-400 font-medium">حافلة شمال الرياض</span>
                 </td>
                 <td className="px-6 py-4 text-xs text-slate-500">شارع التخصصي - تقاطع الملك فهد</td>
                 <td className="px-6 py-4">
-                  <span className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded">مشترك نشط</span>
+                  <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded">مشترك نشط</span>
                 </td>
                 <td className="px-6 py-4">
                   <button className="text-slate-400 hover:text-rose-600 transition-colors">
@@ -215,30 +215,30 @@ const SubscriptionsSection = () => {
           <div key={i} className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-sm text-slate-600 dark:text-slate-400">ط</div>
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#202022] flex items-center justify-center font-bold text-sm text-slate-600 dark:text-zinc-400">ط</div>
                 <div>
                   <p className="text-sm font-bold text-slate-800 dark:text-white">طالب مشترك {i}</p>
                   <p className="text-[10px] text-slate-400">#STD-00{i}</p>
                 </div>
               </div>
-              <button className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <button className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
                 <ArrowRightLeft size={18} />
               </button>
             </div>
             
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl space-y-2 border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-[#202022]/50 p-3 rounded-xl space-y-2 border border-slate-100 dark:border-white/5">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400">الحافلة:</span>
-                <span className="font-bold text-slate-700 dark:text-slate-300">حافلة شمال الرياض</span>
+                <span className="font-bold text-slate-700 dark:text-zinc-300">حافلة شمال الرياض</span>
               </div>
               <div className="flex justify-between items-start text-xs gap-4">
                 <span className="text-slate-400 whitespace-nowrap">التوقف:</span>
-                <span className="text-slate-500 dark:text-slate-400 text-left">شارع التخصصي - تقاطع الملك فهد</span>
+                <span className="text-slate-500 dark:text-zinc-400 text-left">شارع التخصصي - تقاطع الملك فهد</span>
               </div>
             </div>
             
             <div className="flex justify-start">
-               <span className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/20">مشترك نشط</span>
+               <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20/20">مشترك نشط</span>
             </div>
           </div>
         ))}
@@ -250,10 +250,10 @@ const SubscriptionsSection = () => {
 const TrackingSection = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:h-[600px]">
-      <Card className="lg:col-span-3 p-0 relative overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center border-none h-[300px] md:h-[400px] lg:h-auto">
+      <Card className="lg:col-span-3 p-0 relative overflow-hidden bg-slate-100 dark:bg-[#141415] flex items-center justify-center border-none h-[300px] md:h-[400px] lg:h-auto">
         {/* Placeholder for real map integration */}
         <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/46.6753,24.7136,12,0/800x600?access_token=none')] bg-cover bg-center opacity-50"></div>
-        <div className="relative text-center p-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl border border-white/50">
+        <div className="relative text-center p-8 bg-white/80 dark:bg-[#202022]/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl border border-white/50">
           <MapPin size={48} className="text-orange-600 mx-auto mb-4 animate-bounce" />
           <h4 className="text-2xl font-black text-slate-800 dark:text-white mb-2">خارطة التتبع المباشر</h4>
           <p className="text-slate-500 mb-6 text-sm">سيتم الربط مع خدمة خرائط جوجل أو Mapbox لعرض مواقع الحافلات لحظياً.</p>
@@ -274,7 +274,7 @@ const TrackingSection = () => {
           <motion.div 
             key={bus.id}
             whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer"
+            className="bg-white dark:bg-[#141415] p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm cursor-pointer"
           >
             <div className="flex justify-between items-start mb-2">
               <span className="text-xs font-bold text-slate-800 dark:text-white">{bus.name}</span>
@@ -289,12 +289,12 @@ const TrackingSection = () => {
               <Clock size={12} />
               <span>الوصول المتوقع: {bus.arrival}</span>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
+            <div className="mt-4 pt-3 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
               <div className="flex items-center gap-2 text-xs text-blue-600 font-bold">
                 <MapPin size={14} />
                 <span>{bus.pos}</span>
               </div>
-              <button className="p-1.5 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 hover:text-orange-600 transition-colors">
+              <button className="p-1.5 bg-slate-50 dark:bg-[#202022] rounded-lg text-slate-400 hover:text-orange-600 transition-colors">
                 <Bell size={14} />
               </button>
             </div>

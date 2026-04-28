@@ -14,7 +14,7 @@ export const QuickAction = ({ icon: Icon, label, onClick, color }: QuickActionPr
     whileHover={{ y: -8, scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
-    className="group relative flex flex-col items-center gap-3 md:gap-4 p-4 md:p-6 bg-white dark:bg-slate-900 rounded-2xl md:rounded-[3rem] border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] transition-all duration-500 text-center overflow-hidden h-full justify-center"
+    className="group relative flex flex-col items-center gap-3 md:gap-4 p-4 md:p-6 bg-white dark:bg-[#141415] rounded-2xl md:rounded-[3rem] border border-slate-100 dark:border-white/5 hover:border-blue-500/30 hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] transition-all duration-500 text-center overflow-hidden h-full justify-center"
   >
     <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/30 dark:to-slate-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     

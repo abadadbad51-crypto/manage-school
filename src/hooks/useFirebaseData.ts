@@ -27,6 +27,7 @@ export const useFirebaseData = (user: FirebaseUser | null, profile: UserProfile 
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [allSchedules, setAllSchedules] = useState<Schedule[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -75,6 +76,10 @@ export const useFirebaseData = (user: FirebaseUser | null, profile: UserProfile 
         listeners.push(onSnapshot(collection(db, 'subjects'), (snap) => {
           setSubjects(snap.docs.map(d => ({ id: d.id, ...d.data() } as Subject)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, 'subjects')));
+
+        listeners.push(onSnapshot(collection(db, 'resources'), (snap) => {
+          setResources(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }, (err) => handleFirestoreError(err, OperationType.LIST, 'resources')));
       }
       
       if (['classes', 'dashboard'].includes(activeTab)) {
@@ -94,6 +99,7 @@ export const useFirebaseData = (user: FirebaseUser | null, profile: UserProfile 
     subjects,
     attendanceRecords,
     notifications,
-    allSchedules
+    allSchedules,
+    resources
   };
 };

@@ -30,7 +30,7 @@ export const SortableWidget = ({ id, children }: SortableWidgetProps) => {
       <div 
         {...attributes} 
         {...listeners}
-        className="absolute top-4 right-4 z-10 p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+        className="absolute top-4 right-4 z-10 p-1.5 bg-white/80 dark:bg-[#202022]/80 backdrop-blur-sm rounded-lg border border-slate-200 dark:border-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
       >
         <GripVertical size={16} className="text-slate-400" />
       </div>

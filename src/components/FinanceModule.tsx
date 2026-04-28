@@ -47,7 +47,7 @@ export const FinanceModule: React.FC<FinanceModuleProps> = ({ initialTab = 'acco
           النظام المالي والمحاسبي
         </h2>
         
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
+        <div className="flex bg-slate-100 dark:bg-[#202022] p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
           <div className="flex min-w-max">
             {[
               { id: 'accounting', label: 'الأقساط', icon: PaymentIcon },
@@ -61,7 +61,7 @@ export const FinanceModule: React.FC<FinanceModuleProps> = ({ initialTab = 'acco
                   "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap",
                   activeSubTab === tab.id 
                     ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
                 <tab.icon size={16} className="md:size-[18px]" />
@@ -99,14 +99,14 @@ const AccountingSection = () => {
             </div>
           </Card>
           
-          <Card className="p-6 bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800">
+          <Card className="p-6 bg-white dark:bg-[#141415] border-slate-100 dark:border-white/5">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl">
+              <div className="p-3 bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 rounded-2xl">
                 <AlertCircle size={24} />
               </div>
-              <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-full uppercase tracking-wider">متأخر</span>
+              <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-3 py-1 rounded-full uppercase tracking-wider">متأخر</span>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-bold">أقساط متأخرة</p>
+            <p className="text-slate-500 dark:text-zinc-400 text-sm font-bold">أقساط متأخرة</p>
             <h3 className="text-3xl font-black mt-1 text-slate-800 dark:text-white">12,500 ر.س</h3>
             <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
               <span>8 طلاب لم يسددوا بعد</span>
@@ -115,7 +115,7 @@ const AccountingSection = () => {
         </div>
 
         <Card className="overflow-hidden">
-          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
             <h4 className="font-black text-slate-800 dark:text-white">الأقساط القادمة</h4>
             <button className="text-blue-600 dark:text-blue-400 text-sm font-bold flex items-center gap-1 hover:underline">
               <Plus size={16} />
@@ -124,7 +124,7 @@ const AccountingSection = () => {
           </div>
           <div className="overflow-x-auto hidden sm:block">
             <table className="w-full text-right">
-              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-widest">
+              <thead className="bg-slate-50 dark:bg-[#202022] text-slate-400 dark:text-zinc-500 text-[10px] uppercase tracking-widest">
                 <tr>
                   <th className="px-6 py-4">الطالب</th>
                   <th className="px-6 py-4">المبلغ</th>
@@ -138,7 +138,7 @@ const AccountingSection = () => {
                   <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-600 dark:text-slate-400">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-600 dark:text-zinc-400">
                           {i === 1 ? 'أ' : i === 2 ? 'م' : 'س'}
                         </div>
                         <div>
@@ -147,10 +147,10 @@ const AccountingSection = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">1,500 ر.س</td>
+                    <td className="px-6 py-4 font-bold text-slate-700 dark:text-zinc-300">1,500 ر.س</td>
                     <td className="px-6 py-4 text-xs text-slate-500">2026-05-{10+i}</td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center gap-1 w-fit">
+                      <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 w-fit">
                         <Clock size={12} />
                         قيد الانتظار
                       </span>
@@ -172,7 +172,7 @@ const AccountingSection = () => {
               <div key={i} className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-sm text-slate-600 dark:text-slate-400">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#202022] flex items-center justify-center font-bold text-sm text-slate-600 dark:text-zinc-400">
                       {i === 1 ? 'أ' : i === 2 ? 'م' : 'س'}
                     </div>
                     <div>
@@ -180,7 +180,7 @@ const AccountingSection = () => {
                       <p className="text-[10px] text-slate-500">الصف العاشر - أ</p>
                     </div>
                   </div>
-                  <button className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <button className="p-2 text-blue-600 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
                     <Download size={18} />
                   </button>
                 </div>
@@ -191,9 +191,9 @@ const AccountingSection = () => {
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">تاريخ الاستحقاق</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-300">2026-05-{10+i}</p>
+                    <p className="text-xs text-slate-600 dark:text-zinc-300">2026-05-{10+i}</p>
                   </div>
-                  <span className="px-2 py-1 rounded-lg text-[9px] font-black bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <span className="px-2 py-1 rounded-lg text-[9px] font-black bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Clock size={10} />
                     قيد الانتظار
                   </span>
@@ -207,7 +207,7 @@ const AccountingSection = () => {
       <div className="space-y-6">
         <Card className="p-6">
           <h4 className="font-bold text-slate-800 dark:text-white mb-4">إرسال تنبيهات جماعية</h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mb-6 leading-relaxed">
             يمكنك إرسال تنبيهات آلية لجميع أولياء الأمور الذين لديهم أقساط مستحقة خلال الأسبوع القادم.
           </p>
           <div className="space-y-3">
@@ -215,21 +215,21 @@ const AccountingSection = () => {
               <Download size={18} />
               إرسال عبر واتساب
             </button>
-            <button className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+            <button className="w-full bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
               <FileCheck size={18} />
               إرسال إشعار للنظام
             </button>
           </div>
         </Card>
         
-        <Card className="p-6 bg-slate-50 dark:bg-slate-800/50 border-dashed border-2 border-slate-200 dark:border-slate-700">
+        <Card className="p-6 bg-slate-50 dark:bg-[#202022]/50 border-dashed border-2 border-slate-200 dark:border-white/10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+            <div className="p-2 bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-lg">
               <PaymentIcon size={20} />
             </div>
             <h4 className="font-bold text-slate-800 dark:text-white">بوابة الدفع</h4>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">تكامل مع Stripe و Fawry مفعل</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mb-4">تكامل مع Stripe و Fawry مفعل</p>
           <button className="text-xs font-bold text-blue-600 hover:underline">إعدادات الدفع الإلكتروني ←</button>
         </Card>
       </div>
@@ -251,14 +251,14 @@ const InventorySection = () => {
               <p className="text-2xl font-black text-slate-800 dark:text-white">3,450 ر.س</p>
             </div>
           </div>
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full">
+          <div className="h-2 bg-slate-100 dark:bg-[#202022] rounded-full">
             <div className="h-full w-2/3 bg-indigo-500 rounded-full shadow-sm shadow-indigo-200"></div>
           </div>
         </Card>
         
         <Card className="p-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl">
+            <div className="p-3 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-2xl">
               <Box size={24} />
             </div>
             <div>
@@ -266,14 +266,14 @@ const InventorySection = () => {
               <p className="text-2xl font-black text-slate-800 dark:text-white">124 صنف</p>
             </div>
           </div>
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full">
+          <div className="h-2 bg-slate-100 dark:bg-[#202022] rounded-full">
             <div className="h-full w-full bg-amber-500 rounded-full shadow-sm shadow-amber-200"></div>
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl">
+            <div className="p-3 bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-2xl">
               <TrendingDown size={24} />
             </div>
             <div>
@@ -281,7 +281,7 @@ const InventorySection = () => {
               <p className="text-2xl font-black text-slate-800 dark:text-white">5 أصناف</p>
             </div>
           </div>
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full">
+          <div className="h-2 bg-slate-100 dark:bg-[#202022] rounded-full">
             <div className="h-full w-1/4 bg-rose-500 rounded-full shadow-sm shadow-rose-200"></div>
           </div>
         </Card>
@@ -293,7 +293,7 @@ const InventorySection = () => {
           <input 
             type="text" 
             placeholder="البحث عن كتاب، زي مدرسي، أو أداة..."
-            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+            className="w-full bg-white dark:bg-[#141415] border border-slate-200 dark:border-white/5 rounded-2xl py-3 pr-12 pl-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
           />
         </div>
         <button className="bg-slate-800 dark:bg-slate-700 text-white px-6 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-900 transition-colors">
@@ -309,23 +309,23 @@ const InventorySection = () => {
           { name: 'مجموعة أدوات هندسية', price: 45, stock: 0, type: 'أدوات' },
           { name: 'كتاب الرياضيات - الصف 10', price: 140, stock: 89, type: 'كتاب' }
         ].map((item, i) => (
-          <Card key={i} className="group hover:shadow-xl transition-all duration-300 border-slate-100 dark:border-slate-800">
-            <div className="aspect-square bg-slate-50 dark:bg-slate-800 flex items-center justify-center p-8 transition-colors">
+          <Card key={i} className="group hover:shadow-xl transition-all duration-300 border-slate-100 dark:border-white/5">
+            <div className="aspect-square bg-slate-50 dark:bg-[#202022] flex items-center justify-center p-8 transition-colors">
               <Box className="text-slate-200 dark:text-slate-700 group-hover:scale-110 transition-transform duration-500" size={64} />
             </div>
             <div className="p-4">
-              <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded uppercase">{item.type}</span>
+              <span className="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded uppercase">{item.type}</span>
               <h5 className="font-bold text-slate-800 dark:text-white mt-2 line-clamp-1">{item.name}</h5>
               <div className="mt-4 flex justify-between items-center">
                 <p className="text-lg font-black text-slate-900 dark:text-white">{item.price} ر.س</p>
                 <span className={cn(
                   "text-[10px] font-bold p-1 rounded",
-                  item.stock > 0 ? "text-emerald-600" : "text-rose-600 bg-rose-50 dark:bg-rose-900/20"
+                  item.stock > 0 ? "text-emerald-600" : "text-rose-600 bg-rose-50 dark:bg-rose-500/10"
                 )}>
                   {item.stock > 0 ? `${item.stock} في المخزن` : 'نفذ الكمية'}
                 </span>
               </div>
-              <button className="w-full mt-4 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-600 dark:text-slate-400 py-2 rounded-xl text-xs font-bold transition-all">
+              <button className="w-full mt-4 bg-slate-50 dark:bg-[#202022] hover:bg-blue-600 hover:text-white text-slate-600 dark:text-zinc-400 py-2 rounded-xl text-xs font-bold transition-all">
                 بيع الآن (فاتورة إلكترونية)
               </button>
             </div>
@@ -339,13 +339,13 @@ const InventorySection = () => {
 const TransactionsSection = () => {
   return (
     <Card className="p-0 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+      <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/30">
         <h4 className="font-black text-slate-800 dark:text-white">سجل العمليات المالية</h4>
         <div className="flex gap-2">
-          <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+          <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-white dark:bg-[#202022] rounded-lg shadow-sm">
             <Filter size={18} />
           </button>
-          <button className="bg-white dark:bg-slate-800 text-slate-700 dark:text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50 transition-colors border border-slate-100 dark:border-slate-700">
+          <button className="bg-white dark:bg-[#202022] text-slate-700 dark:text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50 transition-colors border border-slate-100 dark:border-white/10">
             <Download size={16} />
             تصدير تقرير ضريبي
           </button>
@@ -353,7 +353,7 @@ const TransactionsSection = () => {
       </div>
       <div className="overflow-x-auto hidden sm:block">
         <table className="w-full text-right">
-          <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 text-[10px] uppercase tracking-widest">
+          <thead className="bg-slate-50 dark:bg-[#202022] text-slate-400 text-[10px] uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4">الرقم المرجعي</th>
               <th className="px-6 py-4">البيان</th>
@@ -375,7 +375,7 @@ const TransactionsSection = () => {
                 <td className="px-6 py-4 text-xs text-slate-500">بطاقة مدى</td>
                 <td className="px-6 py-4 text-xs text-slate-400">2026-04-12 10:30</td>
                 <td className="px-6 py-4">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600">
                     <CheckCircle2 size={12} />
                     تم الدفع
                   </span>
@@ -394,7 +394,7 @@ const TransactionsSection = () => {
                 <p className="text-sm font-black text-slate-800 dark:text-white">{i % 2 === 0 ? 'سداد قسط دراسي' : 'شراء زي مدرسي'}</p>
                 <p className="text-[10px] text-slate-500 font-medium">بواسطة: ولي أمر الطالب أ</p>
               </div>
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-black bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600">
                 <CheckCircle2 size={10} />
                 تم الدفع
               </span>
@@ -406,10 +406,10 @@ const TransactionsSection = () => {
               </div>
               <div className="text-right">
                 <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-0.5">التاريخ</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">04-12 10:30</p>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">04-12 10:30</p>
               </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-slate-400">
+            <div className="flex items-center justify-between text-[10px] bg-slate-50 dark:bg-[#202022]/50 p-2 rounded-lg text-slate-400">
                <span>#INV-2026-00{i}</span>
                <span>بطاقة مدى</span>
             </div>

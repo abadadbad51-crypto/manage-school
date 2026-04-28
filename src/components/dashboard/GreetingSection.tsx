@@ -16,7 +16,7 @@ export const GreetingSection = ({ user }: GreetingSectionProps) => {
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="mb-6 relative overflow-hidden p-4 md:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300"
+      className="mb-6 relative overflow-hidden p-4 md:p-5 bg-white dark:bg-[#141415] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm transition-all duration-300"
     >
       {/* Dynamic Background Elements - Smaller & Subtler */}
       <div className="absolute top-0 right-0 w-1/4 h-full bg-gradient-to-l from-blue-50/30 dark:from-blue-950/20 to-transparent pointer-events-none" />
@@ -25,7 +25,7 @@ export const GreetingSection = ({ user }: GreetingSectionProps) => {
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100/50 dark:border-blue-800/30">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100/50 dark:border-blue-500/20">
             <Sparkles size={10} className="animate-pulse" />
             نظام إدارة المدرسة
           </div>
@@ -36,13 +36,13 @@ export const GreetingSection = ({ user }: GreetingSectionProps) => {
               </span> 👋
             </h1>
           </div>
-          <p className="text-slate-500 dark:text-slate-400 font-medium text-xs max-w-lg">
+          <p className="text-slate-500 dark:text-zinc-400 font-medium text-xs max-w-lg">
             إليك ملخص اليوم السريع، ليكون يومك رائعاً ومثمراً.
           </p>
         </div>
 
         <div className="flex flex-row gap-2.5">
-          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50 flex flex-col items-center justify-center min-w-[80px] group transition-all duration-300 hover:bg-white dark:hover:bg-slate-800">
+          <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#202022]/50 rounded-xl border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center min-w-[80px] group transition-all duration-300 hover:bg-white dark:hover:bg-slate-800">
              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock size={10} /> الوقت</p>
              <p className="text-lg font-black text-slate-800 dark:text-white tabular-nums">{format(new Date(), 'HH:mm')}</p>
           </div>

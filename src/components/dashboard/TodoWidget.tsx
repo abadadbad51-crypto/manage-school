@@ -61,7 +61,7 @@ export const TodoWidget = ({
     <Card className={cn("flex flex-col transition-all duration-300", collapsed ? "h-auto min-h-0" : "h-full min-h-[400px]")}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <ClipboardList size={18} />
           </div>
           <h3 className="text-lg font-bold text-slate-800 dark:text-white">قائمة المهام</h3>
@@ -110,7 +110,7 @@ export const TodoWidget = ({
                   value={newTodoText}
                   onChange={(e) => setNewTodoText(e.target.value)}
                   placeholder="أضف مهمة جديدة..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
                 <button 
                   type="submit" 
@@ -121,14 +121,14 @@ export const TodoWidget = ({
                 </button>
               </div>
               <div className="flex items-center gap-2 px-1">
-                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700 transition-all">
+                <div className="flex items-center gap-2 text-slate-400 dark:text-zinc-500 bg-slate-50 dark:bg-[#202022]/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-white/10 transition-all">
                   <AlarmClock size={14} />
                   <span className="text-[10px] font-bold">وقت التذكير:</span>
                   <input 
                     type="time" 
                     value={reminderTime}
                     onChange={(e) => setReminderTime(e.target.value)}
-                    className="bg-transparent border-none text-[10px] font-bold text-slate-600 dark:text-slate-300 focus:ring-0 p-0 w-20"
+                    className="bg-transparent border-none text-[10px] font-bold text-slate-600 dark:text-zinc-300 focus:ring-0 p-0 w-20"
                   />
                 </div>
                 {reminderTime && (
@@ -146,7 +146,7 @@ export const TodoWidget = ({
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
               {todos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-[#202022]/50 flex items-center justify-center mb-4">
                     <CheckCircle2 size={32} className="opacity-20" />
                   </div>
                   <p className="text-sm font-medium">لا توجد مهام حالية</p>
@@ -163,8 +163,8 @@ export const TodoWidget = ({
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-2xl border transition-all group",
                         todo.completed 
-                          ? "bg-slate-50/50 dark:bg-slate-800/30 border-transparent opacity-60" 
-                          : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm hover:border-blue-200 dark:hover:border-blue-800"
+                          ? "bg-slate-50/50 dark:bg-[#202022]/30 border-transparent opacity-60" 
+                          : "bg-white dark:bg-[#202022] border-slate-100 dark:border-white/10 shadow-sm hover:border-blue-200 dark:hover:border-blue-800"
                       )}
                     >
                       <button 
@@ -179,7 +179,7 @@ export const TodoWidget = ({
                       <div className="flex-1 min-w-0">
                         <span className={cn(
                           "block text-sm font-bold transition-all truncate",
-                          todo.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"
+                          todo.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-zinc-200"
                         )}>
                           {todo.text}
                         </span>
@@ -206,7 +206,7 @@ export const TodoWidget = ({
               )}
             </div>
             
-            <div className="mt-6 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
+            <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 {todos.filter(t => !t.completed).length} مهام متبقية
               </span>

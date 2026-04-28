@@ -33,11 +33,11 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-2">
         <h2 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-          <Settings className="text-slate-600 dark:text-slate-400" size={32} />
+          <Settings className="text-slate-600 dark:text-zinc-400" size={32} />
           إعدادات النظام المتقدمة
         </h2>
         
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+        <div className="flex bg-slate-100 dark:bg-[#202022] p-1 rounded-2xl">
           {[
             { id: 'modules', label: 'الموديولات', icon: Layers },
             { id: 'international', label: 'اللغة والتقارير', icon: Globe },
@@ -51,7 +51,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
                 activeSubTab === tab.id 
                   ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm" 
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
               <tab.icon size={18} />
@@ -66,12 +66,12 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
           {Object.entries(appConfig.modules).map(([key, enabled]) => (
             <Card key={key} className={cn(
               "p-6 transition-all duration-300 border-2",
-              enabled ? "border-blue-500 shadow-lg shadow-blue-100 dark:shadow-none" : "border-slate-100 dark:border-slate-800 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+              enabled ? "border-blue-500 shadow-lg shadow-blue-100 dark:shadow-none" : "border-slate-100 dark:border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
             )}>
               <div className="flex justify-between items-start mb-4">
                 <div className={cn(
                   "p-3 rounded-2xl",
-                  enabled ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                  enabled ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-[#202022] text-slate-400"
                 )}>
                   {key === 'accounting' && <Database size={24} />}
                   {key === 'inventory' && <Layers size={24} />}
@@ -108,14 +108,14 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
       {activeSubTab === 'international' && (
         <Card className="p-8">
            <div className="max-w-2xl mx-auto space-y-8">
-             <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+             <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-[#202022]/50 rounded-3xl border border-slate-100 dark:border-white/5">
                <div>
                  <h4 className="font-bold text-slate-800 dark:text-white mb-1">لغة النظام (i18n)</h4>
                  <p className="text-xs text-slate-500 italic">تغيير واجهة البرنامج بالكامل</p>
                </div>
                <button 
                 onClick={toggleLanguage}
-                className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 dark:border-slate-700 hover:scale-105 transition-transform"
+                className="bg-white dark:bg-[#202022] p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 dark:border-white/10 hover:scale-105 transition-transform"
                >
                  <Globe size={24} className="text-blue-600" />
                  <span className="font-black text-slate-800 dark:text-white">{appConfig.language === 'ar' ? 'العربية' : 'English'}</span>
@@ -126,7 +126,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
              <div>
                <h4 className="font-bold text-slate-800 dark:text-white mb-4">خيارات التقارير الرقمية</h4>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 border-2 border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4">
+                  <div className="p-4 border-2 border-slate-100 dark:border-white/5 rounded-2xl flex items-center gap-4">
                     <CheckCircle2 className="text-emerald-500" />
                     <div>
                       <p className="text-xs font-bold text-slate-800 dark:text-white">الأرقام الهندية (English numerals)</p>
@@ -162,7 +162,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
              
              <div className="overflow-x-auto">
                 <table className="w-full text-right">
-                   <thead className="text-[10px] uppercase text-slate-400 bg-slate-50 dark:bg-slate-800/50 font-bold">
+                   <thead className="text-[10px] uppercase text-slate-400 bg-slate-50 dark:bg-[#202022]/50 font-bold">
                       <tr>
                          <th className="px-6 py-4">اسم الحقل</th>
                          <th className="px-6 py-4">نوع البيانات</th>
@@ -178,7 +178,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
                         { name: 'مستوى اللغة', type: 'قائمة منسدلة', entity: 'المعلم', options: 'A1, A2, B1, B2' },
                       ].map((field, i) => (
                         <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                           <td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300">{field.name}</td>
+                           <td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-zinc-300">{field.name}</td>
                            <td className="px-6 py-4 text-xs text-slate-500">{field.type}</td>
                            <td className="px-6 py-4 text-xs text-slate-500">{field.entity}</td>
                            <td className="px-6 py-4 text-[10px] text-slate-400">{field.options}</td>
@@ -195,7 +195,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
              </div>
           </Card>
           
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-start gap-4">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl flex items-start gap-4">
              <Info className="text-blue-500 shrink-0 mt-0.5" size={18} />
              <p className="text-xs text-blue-600 leading-relaxed font-medium">
                ملاحظة: عند إضافة حقل جديد، سيظهر تلقائياً في خانة "الإضافات" في نموذج إضافة/تعديل السجل المختار.
@@ -206,8 +206,8 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
 
       {activeSubTab === 'cloud' && (
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-8 border-2 border-slate-100 dark:border-slate-800 hover:border-blue-500 transition-all group">
-             <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
+          <Card className="p-8 border-2 border-slate-100 dark:border-white/5 hover:border-blue-500 transition-all group">
+             <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
                 <Cloud size={32} />
              </div>
              <h4 className="text-xl font-black text-slate-800 dark:text-white mb-2">Google Drive</h4>
@@ -215,7 +215,7 @@ export const SettingsModule: React.FC<SettingsModuleProps> = ({ appConfig, toggl
              <button className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100">ربط الحساب الآن</button>
           </Card>
 
-          <Card className="p-8 border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all group">
+          <Card className="p-8 border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all group">
              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
                 <Smartphone size={32} />
              </div>

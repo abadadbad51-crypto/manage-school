@@ -16,7 +16,7 @@ export const SidebarGroup = ({ icon: Icon, label, children, isOpen, onToggle }: 
     <button
       onClick={onToggle}
       className={cn(
-        "flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
+        "flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
       )}
     >
       <div className="flex items-center gap-3">

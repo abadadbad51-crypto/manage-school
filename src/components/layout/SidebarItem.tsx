@@ -18,7 +18,7 @@ export const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemP
       "flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-300 font-medium group relative overflow-hidden",
       active 
         ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/40" 
-        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
+        : "text-slate-500 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
     )}
   >
     {active && (

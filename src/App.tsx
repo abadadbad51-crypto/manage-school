@@ -1,8 +1,9 @@
 import * as XLSX from 'xlsx';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  auth, db, handleFirestoreError, OperationType, type FirestoreErrorInfo 
+  auth, db, storage, handleFirestoreError, OperationType, type FirestoreErrorInfo 
 } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -195,14 +196,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
       }
 
       return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-center transition-colors" dir="rtl">
-          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-10 border border-slate-100 dark:border-slate-800 transition-colors">
-            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0b] flex items-center justify-center p-6 text-center transition-colors" dir="rtl">
+          <div className="max-w-md w-full bg-white dark:bg-[#141415] rounded-2xl shadow-2xl p-10 border border-slate-100 dark:border-white/5 transition-colors">
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={40} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">{errorMessage}</h2>
             {details && (
-              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl text-xs text-slate-500 dark:text-slate-400 font-mono mb-6 break-all text-left dir-ltr border border-slate-100 dark:border-slate-700">
+              <div className="bg-slate-50 dark:bg-[#202022] p-4 rounded-xl text-xs text-slate-500 dark:text-zinc-400 font-mono mb-6 break-all text-left dir-ltr border border-slate-100 dark:border-white/10">
                 {details}
               </div>
             )}
@@ -243,7 +244,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { students, teachers, classes, subjects, attendanceRecords, notifications, allSchedules } = useFirebaseData(user, profile, activeTab);
+  const { students, teachers, classes, subjects, attendanceRecords, notifications, allSchedules, resources } = useFirebaseData(user, profile, activeTab);
   const [activeSubTab, setActiveSubTab] = useState<string | undefined>(undefined);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isAddStudentModalOpen, setAddStudentModalOpen] = useState(false);
@@ -293,6 +294,7 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isUploadingResource, setIsUploadingResource] = useState(false);
   const [isEditScheduleModalOpen, setEditScheduleModalOpen] = useState(false);
   const [isEditSlotModalOpen, setEditSlotModalOpen] = useState(false);
   const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<any>(null);
@@ -784,6 +786,42 @@ export default function App() {
       }
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleUploadResource = async (e: React.ChangeEvent<HTMLInputElement>, subjectName: string) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedSubjectForProfile) return;
+
+    setIsUploadingResource(true);
+    try {
+      // 1. Upload to Firebase Storage
+      const storageRef = ref(storage, `resources/${selectedSubjectForProfile.id}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+
+      // 2. Save metadata to Firestore
+      const newResource = {
+        title: file.name,
+        type: file.type.includes('pdf') ? 'pdf' : file.type.includes('video') ? 'video' : 'document',
+        subject: subjectName || selectedSubjectForProfile.name,
+        subjectId: selectedSubjectForProfile.id,
+        url: downloadUrl,
+        size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+        dateAdded: Timestamp.now(),
+        // Make it visible to anyone enrolled in any class having this subject (simulated by classId: 'all' or actual mapping if needed)
+        // For now, we'll store it under the subject. Students can fetch it if we query by subject.
+      };
+
+      await addDoc(collection(db, 'resources'), newResource);
+
+      alert('تم رفع الملف بنجاح');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'resources');
+      alert('فشل رفع الملف. تأكد من تفعيل Storage Rules');
+    } finally {
+      setIsUploadingResource(false);
+      e.target.value = ''; // Reset input
+    }
   };
 
   const handleMoveStudent = async (e: React.FormEvent) => {
@@ -1728,23 +1766,23 @@ export default function App() {
 
   if (!user || authError) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 transition-colors">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0b] flex flex-col items-center justify-center p-4 transition-colors">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[1.5rem] shadow-2xl w-full max-w-lg border border-slate-100 dark:border-slate-800 transition-colors"
+          className="bg-white dark:bg-[#141415] p-6 md:p-8 rounded-[1.5rem] shadow-2xl w-full max-w-lg border border-slate-100 dark:border-white/5 transition-colors"
         >
           <div className="flex flex-col items-center mb-10">
             <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-xl shadow-blue-200 dark:shadow-none">
               <GraduationCap size={40} />
             </div>
             <h2 className="text-2xl font-black text-slate-800 dark:text-white text-center mb-2">إدارة المدرسة الذكية</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-center font-medium">سجل دخولك للمتابعة</p>
+            <p className="text-slate-500 dark:text-zinc-400 text-center font-medium">سجل دخولك للمتابعة</p>
           </div>
 
           {authError && (
             <div className="mb-8 space-y-4">
-              <div className="bg-rose-50 dark:bg-rose-900/20 border-2 border-rose-100 dark:border-rose-800 p-5 rounded-2xl text-rose-600 dark:text-rose-400 text-sm flex items-start gap-4 text-right animate-shake">
+              <div className="bg-rose-50 dark:bg-rose-500/10 border-2 border-rose-100 dark:border-rose-500/20 p-5 rounded-2xl text-rose-600 dark:text-rose-400 text-sm flex items-start gap-4 text-right animate-shake">
                 <AlertCircle size={24} className="shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="font-bold text-lg mb-1">خطأ في تسجيل الدخول</p>
@@ -1760,7 +1798,7 @@ export default function App() {
                       </button>
                       <button 
                         onClick={() => window.open(window.location.href, '_blank')}
-                        className="bg-white dark:bg-slate-800 text-slate-700 dark:text-white border border-rose-200 dark:border-slate-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+                        className="bg-white dark:bg-[#202022] text-slate-700 dark:text-white border border-rose-200 dark:border-white/10 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
                       >
                         فتح في نافذة مستقلة
                       </button>
@@ -1769,7 +1807,7 @@ export default function App() {
                 </div>
               </div>
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-5 rounded-2xl text-[12px] text-right border border-blue-100 dark:border-blue-800/30 shadow-sm">
+              <div className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 p-5 rounded-2xl text-[12px] text-right border border-blue-100 dark:border-blue-500/20 shadow-sm">
                 <p className="font-bold mb-3 flex items-center gap-2 text-sm">
                   <Info size={16} />
                   دليل حل مشكلات تسجيل الدخول:
@@ -1780,9 +1818,9 @@ export default function App() {
                   <li>تأكد من تفعيل Google Sign-In في مزودي الخدمة.</li>
                 </ul>
                 
-                <div className="mt-4 p-3 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
+                <div className="mt-4 p-3 bg-white/50 dark:bg-[#202022]/50 rounded-xl border border-blue-200/50 dark:border-blue-700/30">
                   <p className="text-[10px] text-slate-500 mb-1">النطاق الحالي:</p>
-                  <code className="block bg-slate-100 dark:bg-slate-900 p-2 rounded text-blue-600 dark:text-blue-400 font-mono text-[10px] break-all">
+                  <code className="block bg-slate-100 dark:bg-[#141415] p-2 rounded text-blue-600 dark:text-blue-400 font-mono text-[10px] break-all">
                     {window.location.hostname}
                   </code>
                   <button 
@@ -1802,7 +1840,7 @@ export default function App() {
           <form onSubmit={handleEmailAuth} className="space-y-5 mb-8 text-right">
             {isRegistering && (
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 pr-1">الاسم الكامل</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-zinc-300 pr-1">الاسم الكامل</label>
                 <div className="relative">
                   <UserCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input
@@ -1810,14 +1848,14 @@ export default function App() {
                     required
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl py-3 pr-12 pl-4 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-[#202022] border-2 border-slate-100 dark:border-white/10 rounded-2xl py-3 pr-12 pl-4 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
                     placeholder="أدخل اسمك الكامل"
                   />
                 </div>
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 pr-1">البريد الإلكتروني</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-zinc-300 pr-1">البريد الإلكتروني</label>
               <div className="relative">
                 <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input
@@ -1825,13 +1863,13 @@ export default function App() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl py-3 pr-12 pl-4 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-[#202022] border-2 border-slate-100 dark:border-white/10 rounded-2xl py-3 pr-12 pl-4 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
                   placeholder="name@example.com"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 pr-1">كلمة المرور</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-zinc-300 pr-1">كلمة المرور</label>
               <div className="relative">
                 <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input
@@ -1839,7 +1877,7 @@ export default function App() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl py-3 pr-12 pl-12 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-[#202022] border-2 border-slate-100 dark:border-white/10 rounded-2xl py-3 pr-12 pl-12 focus:border-blue-600 focus:outline-none transition-all dark:text-white"
                   placeholder="••••••••"
                 />
                 <button
@@ -1870,10 +1908,10 @@ export default function App() {
 
           <div className="relative mb-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+              <div className="w-full border-t border-slate-200 dark:border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white dark:bg-slate-900 text-slate-500 font-bold">أو</span>
+              <span className="px-4 bg-white dark:bg-[#141415] text-slate-500 font-bold">أو</span>
             </div>
           </div>
 
@@ -1881,7 +1919,7 @@ export default function App() {
             <button 
               onClick={loginWithPopup}
               disabled={isLoggingIn}
-              className="w-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border-2 border-slate-100 dark:border-slate-700 shadow-sm disabled:opacity-70"
+              className="w-full bg-white dark:bg-[#202022] hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border-2 border-slate-100 dark:border-white/10 shadow-sm disabled:opacity-70"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
               الدخول عبر جوجل (نافذة منبثقة)
@@ -1889,7 +1927,7 @@ export default function App() {
             <button 
               onClick={loginWithRedirect}
               disabled={isLoggingIn}
-              className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border-2 border-transparent shadow-sm disabled:opacity-70"
+              className="w-full bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border-2 border-transparent shadow-sm disabled:opacity-70"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
               الدخول عبر جوجل (تحويل مباشر)
@@ -1956,7 +1994,34 @@ export default function App() {
     };
 
     const exportToPDF = () => {
-      // ... existing PDF export logic
+      import('jspdf').then(({ default: jsPDF }) => {
+        import('jspdf-autotable').then(({ default: autoTable }) => {
+          const doc = new jsPDF();
+          // Add basic arabic support or at least export english data for safety
+          doc.addFont('Courier', 'Courier', 'normal');
+          doc.setFont('Courier');
+          
+          const headers = [['Student Name', 'Class', 'Date', 'Status']];
+          const data = filteredAttendance.map(record => {
+            const student = students.find(s => s.id === record.studentId);
+            const cls = classes.find(c => c.id === record.classId);
+            return [
+              student?.name || 'Unknown',
+              cls?.name || record.classId || '-',
+              record.date,
+              record.status === 'present' ? 'Present' : 'Absent'
+            ];
+          });
+
+          autoTable(doc, {
+            head: headers,
+            body: data,
+            styles: { font: 'Courier' }, // basic font
+          });
+
+          doc.save(`attendance_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+        });
+      });
     };
 
     const groupedAttendance = filteredAttendance.reduce((acc: any, record) => {
@@ -1976,12 +2041,12 @@ export default function App() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white">تقارير الحضور والغياب</h2>
           <div className="flex flex-wrap gap-3">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <div className="flex bg-slate-100 dark:bg-[#202022] p-1 rounded-xl">
               <button 
                 onClick={() => setAttendanceViewMode('list')}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-sm font-bold transition-all",
-                  attendanceViewMode === 'list' ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  attendanceViewMode === 'list' ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
                 قائمة مسطحة
@@ -1990,7 +2055,7 @@ export default function App() {
                 onClick={() => setAttendanceViewMode('grouped')}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-sm font-bold transition-all",
-                  attendanceViewMode === 'grouped' ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                  attendanceViewMode === 'grouped' ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
                 حسب الصفوف
@@ -2016,29 +2081,29 @@ export default function App() {
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">من تاريخ</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">من تاريخ</label>
               <input 
                 type="date" 
                 value={attendanceFilters.startDate}
                 onChange={(e) => setAttendanceFilters({...attendanceFilters, startDate: e.target.value})}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">إلى تاريخ</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">إلى تاريخ</label>
               <input 
                 type="date" 
                 value={attendanceFilters.endDate}
                 onChange={(e) => setAttendanceFilters({...attendanceFilters, endDate: e.target.value})}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الفصل</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الفصل</label>
               <select 
                 value={attendanceFilters.classId}
                 onChange={(e) => setAttendanceFilters({...attendanceFilters, classId: e.target.value})}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               >
                 <option value="">كل الفصول</option>
                 {classes.map(c => (
@@ -2047,11 +2112,11 @@ export default function App() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الطالب</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الطالب</label>
               <select 
                 value={attendanceFilters.studentId}
                 onChange={(e) => setAttendanceFilters({...attendanceFilters, studentId: e.target.value})}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               >
                 <option value="">كل الطلاب</option>
                 {students.map(s => (
@@ -2064,7 +2129,7 @@ export default function App() {
           <div className="overflow-x-auto hidden sm:block">
             {attendanceViewMode === 'list' ? (
               <table className="w-full text-right">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm uppercase">
+                <thead className="bg-slate-50 dark:bg-[#202022] text-slate-500 dark:text-zinc-400 text-sm uppercase">
                   <tr>
                     <th className="px-6 py-4 font-semibold">الطالب</th>
                     <th className="px-6 py-4 font-semibold">الفصل</th>
@@ -2080,23 +2145,23 @@ export default function App() {
                       <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
                               {student?.name?.charAt(0) || '?'}
                             </div>
                             <button 
                               onClick={() => student && openStudentProfile(student)}
-                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors text-right"
+                              className="font-medium text-slate-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors text-right"
                             >
                               {student?.name || 'Unknown'}
                             </button>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">{cls?.name || record.classId || '-'}</td>
-                        <td className="px-6 py-4 text-slate-400 dark:text-slate-500 text-xs">{record.date}</td>
+                        <td className="px-6 py-4 text-slate-500 dark:text-zinc-400 text-sm">{cls?.name || record.classId || '-'}</td>
+                        <td className="px-6 py-4 text-slate-400 dark:text-zinc-500 text-xs">{record.date}</td>
                         <td className="px-6 py-4">
                           <span className={cn(
                             "px-3 py-1 rounded-full text-xs font-bold",
-                            record.status === 'present' ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+                            record.status === 'present' ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400"
                           )}>
                             {record.status === 'present' ? 'حاضر' : 'غائب'}
                           </span>
@@ -2106,7 +2171,7 @@ export default function App() {
                   })}
                   {filteredAttendance.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">لا توجد سجلات تطابق الفلاتر المختارة</td>
+                      <td colSpan={4} className="px-6 py-12 text-center text-slate-400 dark:text-zinc-500">لا توجد سجلات تطابق الفلاتر المختارة</td>
                     </tr>
                   )}
                 </tbody>
@@ -2116,24 +2181,24 @@ export default function App() {
                 {Object.keys(groupedAttendance).sort().map(grade => (
                   <div key={grade} className="space-y-4">
                     <div className="flex items-center gap-4">
-                      <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800"></div>
-                      <h3 className="text-lg font-black text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-800 px-4 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                      <div className="h-px flex-1 bg-slate-100 dark:bg-[#202022]"></div>
+                      <h3 className="text-lg font-black text-slate-800 dark:text-white bg-slate-50 dark:bg-[#202022] px-4 py-1 rounded-full border border-slate-200 dark:border-white/10">
                         الصف: {grade}
                       </h3>
-                      <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800"></div>
+                      <div className="h-px flex-1 bg-slate-100 dark:bg-[#202022]"></div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {Object.keys(groupedAttendance[grade]).sort().map(section => (
-                        <div key={section} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-                          <div className="bg-slate-50 dark:bg-slate-800 px-6 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                            <span className="font-bold text-slate-700 dark:text-slate-300">شعبة: {section}</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">{groupedAttendance[grade][section].length} سجل</span>
+                        <div key={section} className="bg-white dark:bg-[#141415] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+                          <div className="bg-slate-50 dark:bg-[#202022] px-6 py-3 border-b border-slate-100 dark:border-white/10 flex justify-between items-center">
+                            <span className="font-bold text-slate-700 dark:text-zinc-300">شعبة: {section}</span>
+                            <span className="text-xs text-slate-400 dark:text-zinc-500">{groupedAttendance[grade][section].length} سجل</span>
                           </div>
                           <div className="p-4">
                             <table className="w-full text-right text-sm">
                               <thead>
-                                <tr className="text-slate-400 dark:text-slate-500 border-b border-slate-50 dark:border-slate-800">
+                                <tr className="text-slate-400 dark:text-zinc-500 border-b border-slate-50 dark:border-white/5">
                                   <th className="pb-2 font-medium">الطالب</th>
                                   <th className="pb-2 font-medium">التاريخ</th>
                                   <th className="pb-2 font-medium">الحالة</th>
@@ -2144,12 +2209,12 @@ export default function App() {
                                   const student = students.find(s => s.id === record.studentId);
                                   return (
                                     <tr key={record.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                      <td className="py-2 font-medium text-slate-700 dark:text-slate-300">{student?.name || 'Unknown'}</td>
-                                      <td className="py-2 text-slate-400 dark:text-slate-500 text-[10px]">{record.date}</td>
+                                      <td className="py-2 font-medium text-slate-700 dark:text-zinc-300">{student?.name || 'Unknown'}</td>
+                                      <td className="py-2 text-slate-400 dark:text-zinc-500 text-[10px]">{record.date}</td>
                                       <td className="py-2">
                                         <span className={cn(
                                           "px-2 py-0.5 rounded-full text-[10px] font-bold",
-                                          record.status === 'present' ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400"
+                                          record.status === 'present' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400"
                                         )}>
                                           {record.status === 'present' ? 'حاضر' : 'غائب'}
                                         </span>
@@ -2189,12 +2254,12 @@ export default function App() {
                         </button>
                         <span className={cn(
                           "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase",
-                          record.status === 'present' ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400"
+                          record.status === 'present' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400"
                         )}>
                           {record.status === 'present' ? 'حاضر' : 'غائب'}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
                         <div className="flex items-center gap-1.5">
                           <LayoutGrid size={12} className="text-slate-400" />
                           <span>{cls?.name || record.classId || '-'}</span>
@@ -2218,17 +2283,17 @@ export default function App() {
                     </h3>
                     <div className="space-y-3">
                       {Object.keys(groupedAttendance[grade]).sort().map(section => (
-                        <div key={section} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div key={section} className="bg-slate-50 dark:bg-[#141415]/50 p-4 rounded-2xl border border-slate-100 dark:border-white/5">
                           <p className="text-xs font-bold text-slate-800 dark:text-white mb-3">شعبة: {section}</p>
                           <div className="space-y-2">
                             {groupedAttendance[grade][section].map((record: any) => {
                               const student = students.find(s => s.id === record.studentId);
                               return (
-                                <div key={record.id} className="flex items-center justify-between py-1 border-b border-white/5 dark:border-slate-800 last:border-0">
-                                  <span className="text-xs text-slate-600 dark:text-slate-400">{student?.name || 'Unknown'}</span>
+                                <div key={record.id} className="flex items-center justify-between py-1 border-b border-white/5 dark:border-white/5 last:border-0">
+                                  <span className="text-xs text-slate-600 dark:text-zinc-400">{student?.name || 'Unknown'}</span>
                                   <span className={cn(
                                     "text-[9px] font-black px-2 py-0.5 rounded",
-                                    record.status === 'present' ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20" : "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20"
+                                    record.status === 'present' ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" : "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10"
                                   )}>
                                     {record.status === 'present' ? 'حاضر' : 'غائب'}
                                   </span>
@@ -2356,12 +2421,12 @@ export default function App() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-white">مؤشر الأداء الأكاديمي</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">متوسط درجات الطلاب حسب المادة</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">متوسط درجات الطلاب حسب المادة</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">المتوسط</span>
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-400">المتوسط</span>
                   </div>
                 </div>
               </div>
@@ -2417,14 +2482,14 @@ export default function App() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div className="mt-4 p-4 bg-slate-50 dark:bg-[#202022]/50 rounded-2xl border border-slate-100 dark:border-white/10">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-lg">
                     <AlertCircle size={18} />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-800 dark:text-white">توصية الإدارة</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1">
                       مادة <span className="font-bold text-rose-500">الرياضيات</span> تظهر متوسطاً أقل من المستهدف (72%). يُنصح بمراجعة خطة التدريس أو تكثيف حصص المراجعة.
                     </p>
                   </div>
@@ -2593,9 +2658,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-white/5"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                 {editingStudent ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد'}
               </h3>
@@ -2605,35 +2670,35 @@ export default function App() {
             </div>
             <form onSubmit={handleAddStudent} className="p-5 space-y-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم الطالب</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم الطالب</label>
                 <input 
                   required
                   type="text" 
                   value={newStudent.name}
                   onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
                   placeholder="أدخل الاسم الكامل"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">البريد الإلكتروني</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">البريد الإلكتروني</label>
                 <input 
                   required
                   type="email" 
                   value={newStudent.email}
                   onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
                   placeholder="example@school.com"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الصف</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الصف</label>
                   <select 
                     required
                     value={newStudent.classId}
                     onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                   >
                     <option value="">اختر الصف</option>
                     <option value="1">الصف الأول</option>
@@ -2644,37 +2709,37 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الشعبة</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الشعبة</label>
                   <input 
                     type="text" 
                     value={newStudent.section}
                     onChange={(e) => setNewStudent({...newStudent, section: e.target.value})}
                     placeholder="أ، ب، جـ..."
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم ولي الأمر</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم ولي الأمر</label>
                   <input 
                     required
                     type="text" 
                     value={newStudent.parentName}
                     onChange={(e) => setNewStudent({...newStudent, parentName: e.target.value})}
                     placeholder="الاسم الثلاثي"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">رقم الهاتف</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">رقم الهاتف</label>
                   <input 
                     required
                     type="tel" 
                     value={newStudent.parentPhone}
                     onChange={(e) => setNewStudent({...newStudent, parentPhone: e.target.value})}
                     placeholder="0123456789"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                   />
                 </div>
               </div>
@@ -2689,7 +2754,7 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setAddStudentModalOpen(false)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-4 rounded-2xl transition-all"
                 >
                   إلغاء
                 </button>
@@ -2709,9 +2774,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-white/5"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                 {editingClass ? 'تعديل بيانات الفصل' : 'إضافة فصل جديد'}
               </h3>
@@ -2721,24 +2786,24 @@ export default function App() {
             </div>
             <form onSubmit={handleAddClass} className="p-5 space-y-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم الفصل</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم الفصل</label>
                 <input 
                   required
                   type="text" 
                   value={newClass.name}
                   onChange={(e) => setNewClass({...newClass, name: e.target.value})}
                   placeholder="مثال: فصل المبدعين"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الصف</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الصف</label>
                   <select 
                     required
                     value={newClass.gradeId}
                     onChange={(e) => setNewClass({...newClass, gradeId: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   >
                     <option value="">اختر الصف</option>
                     <option value="1">الصف الأول</option>
@@ -2749,13 +2814,13 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الشعبة</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الشعبة</label>
                   <input 
                     type="text" 
                     value={newClass.section}
                     onChange={(e) => setNewClass({...newClass, section: e.target.value})}
                     placeholder="أ، ب، جـ..."
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -2770,7 +2835,7 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setAddClassModalOpen(false)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-4 rounded-2xl transition-all"
                 >
                   إلغاء
                 </button>
@@ -2790,9 +2855,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-white/5"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                 {editingTeacher ? 'تعديل بيانات المعلم' : 'إضافة معلم جديد'}
               </h3>
@@ -2803,36 +2868,36 @@ export default function App() {
             <form onSubmit={handleAddTeacher} className="p-5 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المعلم</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم المعلم</label>
                   <input 
                     required
                     type="text" 
                     value={newTeacher.name}
                     onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
                     placeholder="أدخل الاسم الكامل"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">البريد الإلكتروني</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">البريد الإلكتروني</label>
                   <input 
                     required
                     type="email" 
                     value={newTeacher.email}
                     onChange={(e) => setNewTeacher({...newTeacher, email: e.target.value})}
                     placeholder="teacher@school.com"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">المواد الدراسية</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">المواد الدراسية</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {newTeacher.subjects.map(subId => {
                     const sub = subjects.find(s => s.id === subId);
                     return (
-                      <span key={subId} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold flex items-center gap-2">
+                      <span key={subId} className="px-3 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold flex items-center gap-2">
                         {sub?.name || subId}
                         <button 
                           type="button"
@@ -2852,7 +2917,7 @@ export default function App() {
                     }
                     e.target.value = '';
                   }}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 >
                   <option value="">اختر مادة لإضافتها...</option>
                   {subjects.map(sub => (
@@ -2872,7 +2937,7 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setAddTeacherModalOpen(false)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-4 rounded-2xl transition-all"
                 >
                   إلغاء
                 </button>
@@ -2892,28 +2957,28 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-white/5"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">نقل الطالب</h3>
               <button onClick={() => setMoveStudentModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
                 <X size={24} />
               </button>
             </div>
             <form onSubmit={handleMoveStudent} className="p-5 space-y-5">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20">
                 <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">نقل الطالب: <span className="font-bold">{studentToMove?.name}</span></p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">الصف الحالي: {getGradeName(studentToMove?.classId)} - شعبة {studentToMove?.section || 'عام'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الصف الجديد</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الصف الجديد</label>
                   <select 
                     required
                     value={moveData.classId}
                     onChange={(e) => setMoveData({...moveData, classId: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                   >
                     <option value="">اختر الصف</option>
                     <option value="1">الصف الأول</option>
@@ -2924,13 +2989,13 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الشعبة الجديدة</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الشعبة الجديدة</label>
                   <input 
                     type="text" 
                     value={moveData.section}
                     onChange={(e) => setMoveData({...moveData, section: e.target.value})}
                     placeholder="مثال: أ، ب، 1"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -2945,7 +3010,7 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setMoveStudentModalOpen(false)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-4 rounded-2xl transition-all"
                 >
                   إلغاء
                 </button>
@@ -2965,9 +3030,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-white/5"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">إضافة مادة جديدة</h3>
               <button onClick={() => setAddSubjectModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
                 <X size={24} />
@@ -2975,24 +3040,24 @@ export default function App() {
             </div>
             <form onSubmit={handleAddSubject} className="p-5 space-y-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المادة</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم المادة</label>
                 <input 
                   required
                   type="text" 
                   value={newSubject.name}
                   onChange={(e) => setNewSubject({...newSubject, name: e.target.value})}
                   placeholder="مثال: الرياضيات"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">الدرجة النهائية</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">الدرجة النهائية</label>
                 <input 
                   required
                   type="number" 
                   value={newSubject.totalMarks}
                   onChange={(e) => setNewSubject({...newSubject, totalMarks: parseInt(e.target.value)})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
               <div className="pt-4 flex gap-3">
@@ -3006,7 +3071,7 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setAddSubjectModalOpen(false)}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-4 rounded-2xl transition-all"
                 >
                   إلغاء
                 </button>
@@ -3052,7 +3117,7 @@ export default function App() {
         </div>
         <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-right">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm uppercase transition-colors">
+            <thead className="bg-slate-50 dark:bg-[#202022] text-slate-500 dark:text-zinc-400 text-sm uppercase transition-colors">
               <tr>
                 <th className="px-6 py-4 font-semibold">المعلم</th>
                 <th className="px-6 py-4 font-semibold">المواد</th>
@@ -3074,10 +3139,10 @@ export default function App() {
                       }}
                       className="flex items-center gap-3 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-right group"
                     >
-                      <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
                         {t.name.charAt(0)}
                       </div>
-                      <span className="font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{t.name}</span>
+                      <span className="font-bold text-slate-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{t.name}</span>
                     </button>
                   </td>
                   <td className="px-6 py-4">
@@ -3086,18 +3151,18 @@ export default function App() {
                         t.subjects.map((subId: string) => {
                           const sub = subjects.find(s => s.id === subId);
                           return (
-                            <span key={subId} className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
+                            <span key={subId} className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
                               {sub?.name || subId}
                             </span>
                           );
                         })
                       ) : (
-                        <span className="text-slate-400 dark:text-slate-500 text-xs italic">لا توجد مواد</span>
+                        <span className="text-slate-400 dark:text-zinc-500 text-xs italic">لا توجد مواد</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-medium">{t.email}</td>
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-medium">{t.phone || '-'}</td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-zinc-400 text-sm font-medium">{t.email}</td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-zinc-400 text-sm font-medium">{t.phone || '-'}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <button 
@@ -3120,7 +3185,7 @@ export default function App() {
               ))}
               {filteredTeachers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-zinc-500">
                     {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا يوجد معلمون مسجلون حالياً'}
                   </td>
                 </tr>
@@ -3143,7 +3208,7 @@ export default function App() {
                   }}
                   className="flex items-center gap-3 text-right group"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-base">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-base">
                     {t.name.charAt(0)}
                   </div>
                   <div>
@@ -3154,13 +3219,13 @@ export default function App() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => openEditTeacherModal(t)}
-                    className="p-2.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-xl transition-all"
+                    className="p-2.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded-xl transition-all"
                   >
                     <Edit size={18} />
                   </button>
                   <button 
                     onClick={() => handleDeleteTeacher(t.id, t.name)}
-                    className="p-2.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 rounded-xl transition-all"
+                    className="p-2.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 rounded-xl transition-all"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -3171,21 +3236,21 @@ export default function App() {
                 {t.subjects?.map((subId: string) => {
                   const sub = subjects.find(s => s.id === subId);
                   return (
-                    <span key={subId} className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase border border-emerald-100 dark:border-emerald-800/30">
+                    <span key={subId} className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase border border-emerald-100 dark:border-emerald-500/20/30">
                       {sub?.name || subId}
                     </span>
                   );
                 })}
               </div>
               
-              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+              <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-2 bg-slate-50 dark:bg-[#202022]/50 p-2 rounded-lg border border-slate-100 dark:border-white/10">
                 <span className="font-bold opacity-70">البريد:</span>
                 <span className="truncate">{t.email}</span>
               </div>
             </div>
           ))}
           {filteredTeachers.length === 0 && (
-            <div className="p-12 text-center text-slate-400 dark:text-slate-500 transition-colors">
+            <div className="p-12 text-center text-slate-400 dark:text-zinc-500 transition-colors">
               {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا يوجد معلمون مسجلون حالياً'}
             </div>
           )}
@@ -3227,10 +3292,10 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+                className="bg-slate-50 dark:bg-[#0a0a0b] rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-white/5 flex flex-col transition-colors"
               >
                 {/* Header */}
-                <div className="bg-white dark:bg-slate-900 p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
+                <div className="bg-white dark:bg-[#141415] p-6 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl bg-${colorClass}-100 dark:bg-${colorClass}-900/30 text-${colorClass}-600 dark:text-${colorClass}-400 flex items-center justify-center font-bold text-3xl shadow-xl shadow-${colorClass}-100 dark:shadow-none`}>
                       <BookOpen size={40} />
@@ -3242,7 +3307,7 @@ export default function App() {
                           {selectedSubjectForProfile.code || 'N/A'}
                         </span>
                       </div>
-                      <p className="text-slate-500 dark:text-slate-400 mt-1">{selectedSubjectForProfile.description || 'لا يوجد وصف متاح لهذه المادة'}</p>
+                      <p className="text-slate-500 dark:text-zinc-400 mt-1">{selectedSubjectForProfile.description || 'لا يوجد وصف متاح لهذه المادة'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -3252,7 +3317,7 @@ export default function App() {
                         setSubjectProfileModalOpen(false);
                         setSelectedSubjectForProfile(null);
                       }}
-                      className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all flex items-center gap-2 border border-blue-100 dark:border-blue-800"
+                      className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all flex items-center gap-2 border border-blue-100 dark:border-blue-500/20"
                     >
                       <Edit size={18} />
                       تعديل المادة
@@ -3262,7 +3327,7 @@ export default function App() {
                         setSubjectProfileModalOpen(false);
                         setSelectedSubjectForProfile(null);
                       }}
-                      className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                      className="bg-slate-100 dark:bg-[#202022] text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300 p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                     >
                       <X size={24} />
                     </button>
@@ -3270,14 +3335,14 @@ export default function App() {
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="bg-white dark:bg-slate-900 px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
+                <div className="bg-white dark:bg-[#141415] px-8 border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar shrink-0 transition-colors">
                   <div className="flex gap-6 min-w-max">
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setSubjectProfileTab(tab.id)}
                         className={`py-5 px-1 relative font-bold text-sm transition-all flex items-center gap-2 ${
-                          subjectProfileTab === tab.id ? `text-${colorClass}-600 dark:text-${colorClass}-400` : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                          subjectProfileTab === tab.id ? `text-${colorClass}-600 dark:text-${colorClass}-400` : 'text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300'
                         }`}
                       >
                         <tab.icon size={18} />
@@ -3461,7 +3526,9 @@ export default function App() {
                       </motion.div>
                     )}
 
-                    {subjectProfileTab === 'resources' && (
+                    {subjectProfileTab === 'resources' && (() => {
+                      const subjectResources = resources.filter(r => r.subjectId === selectedSubjectForProfile.id);
+                      return (
                       <motion.div 
                         key="resources"
                         initial={{ opacity: 0, x: 20 }}
@@ -3472,36 +3539,39 @@ export default function App() {
                         <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                           <div className="flex justify-between items-center mb-8">
                             <h4 className="text-lg font-black text-slate-800">المصادر والمناهج</h4>
-                            <button className={`bg-${colorClass}-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2`}>
-                              <Plus size={16} />
-                              إضافة مصدر جديد
-                            </button>
+                            <label className={`cursor-pointer bg-${colorClass}-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-${colorClass}-700 transition-colors`}>
+                              {isUploadingResource ? <Clock className="animate-spin" size={16} /> : <Plus size={16} />}
+                              {isUploadingResource ? 'جاري الرفع...' : 'إضافة مصدر جديد'}
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                disabled={isUploadingResource}
+                                onChange={(e) => handleUploadResource(e, selectedSubjectForProfile.name)}
+                              />
+                            </label>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-4 group cursor-pointer">
-                              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                <FileText size={24} />
+                            {subjectResources.map((res, i) => (
+                              <div key={i} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-4 group cursor-pointer">
+                                <div className={`w-12 h-12 rounded-xl bg-${colorClass}-50 text-${colorClass}-600 flex items-center justify-center group-hover:bg-${colorClass}-600 group-hover:text-white transition-all`}>
+                                  {res.type === 'pdf' ? <FileText size={24} /> : res.type === 'video' ? <Book size={24} /> : <Download size={24} />}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-bold text-slate-700">{res.title}</p>
+                                  <p className="text-[10px] text-slate-400">{res.type.toUpperCase()}{res.size ? ` • ${res.size}` : ''}</p>
+                                </div>
+                                <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+                                  <Download size={18} />
+                                </a>
                               </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-bold text-slate-700">الخطة الدراسية السنوية</p>
-                                <p className="text-[10px] text-slate-400">PDF • 2.4 MB</p>
-                              </div>
-                              <Download size={18} className="text-slate-300 group-hover:text-blue-600" />
-                            </div>
-                            <div className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all flex items-center gap-4 group cursor-pointer">
-                              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-all">
-                                <Book size={24} />
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-bold text-slate-700">الكتاب المدرسي الرقمي</p>
-                                <p className="text-[10px] text-slate-400">PDF • 15.8 MB</p>
-                              </div>
-                              <Download size={18} className="text-slate-300 group-hover:text-blue-600" />
-                            </div>
+                            ))}
+                            {subjectResources.length === 0 && (
+                              <div className="col-span-full py-10 text-center text-slate-400 italic">لا توجد مصادر مضافة بعد.</div>
+                            )}
                           </div>
                         </div>
                       </motion.div>
-                    )}
+                    )})()}
                   </AnimatePresence>
                 </div>
 
@@ -3528,7 +3598,7 @@ export default function App() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white">إدارة المواد الدراسية</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">إدارة المناهج، المعلمين، والخطط الدراسية</p>
+            <p className="text-slate-500 dark:text-zinc-400 text-sm mt-1">إدارة المناهج، المعلمين، والخطط الدراسية</p>
           </div>
           <button 
             onClick={() => {
@@ -3544,7 +3614,7 @@ export default function App() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex gap-4 transition-colors">
+        <div className="bg-white dark:bg-[#141415] p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm flex gap-4 transition-colors">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
@@ -3552,7 +3622,7 @@ export default function App() {
               placeholder="البحث عن مادة دراسية..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
         </div>
@@ -3564,9 +3634,9 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
+                className="bg-white dark:bg-[#141415] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-white/5 transition-colors"
               >
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
+                <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50 transition-colors">
                   <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                     {editingSubject ? 'تعديل بيانات المادة' : 'إضافة مادة جديدة'}
                   </h3>
@@ -3580,41 +3650,41 @@ export default function App() {
                 <form onSubmit={handleAddSubject} className="p-5 space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المادة</label>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">اسم المادة</label>
                       <input 
                         required
                         type="text" 
                         value={newSubject.name}
                         onChange={(e) => setNewSubject({...newSubject, name: e.target.value})}
                         placeholder="مثال: الرياضيات"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">رمز المادة</label>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">رمز المادة</label>
                       <input 
                         type="text" 
                         value={newSubject.code}
                         onChange={(e) => setNewSubject({...newSubject, code: e.target.value})}
                         placeholder="مثال: MATH101"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">وصف المادة</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">وصف المادة</label>
                     <textarea 
                       value={newSubject.description}
                       onChange={(e) => setNewSubject({...newSubject, description: e.target.value})}
                       placeholder="أدخل وصفاً موجزاً للمادة..."
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">لون المادة</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">لون المادة</label>
                     <div className="flex flex-wrap gap-3">
                       {['blue', 'emerald', 'rose', 'orange', 'purple', 'indigo', 'amber', 'cyan'].map((color) => (
                         <button
@@ -3642,7 +3712,7 @@ export default function App() {
                     <button 
                       type="button"
                       onClick={() => setAddSubjectModalOpen(false)}
-                      className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-xl transition-all"
+                      className="flex-1 bg-slate-100 dark:bg-[#202022] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-zinc-300 font-bold py-3 rounded-xl transition-all"
                     >
                       إلغاء
                     </button>
@@ -3667,7 +3737,7 @@ export default function App() {
                   setSelectedSubjectForProfile(sub);
                   setSubjectProfileModalOpen(true);
                 }}
-                className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 transition-all cursor-pointer group overflow-hidden"
+                className="bg-white dark:bg-[#141415] rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 transition-all cursor-pointer group overflow-hidden"
               >
                 <div className={`h-2 bg-${colorClass}-500`}></div>
                 <div className="p-6">
@@ -3775,10 +3845,10 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-slate-50 dark:bg-slate-950 rounded-2xl md:rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+              className="bg-slate-50 dark:bg-[#0a0a0b] rounded-2xl md:rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-hidden border border-white/20 dark:border-white/5 flex flex-col transition-colors"
             >
               {/* Header - Fixed */}
-              <div className="bg-white dark:bg-slate-900 p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 shrink-0 transition-colors">
+              <div className="bg-white dark:bg-[#141415] p-4 md:p-6 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 shrink-0 transition-colors">
                 <div className="flex items-center gap-4 md:gap-6">
                   <div className="relative shrink-0">
                     <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-xl md:text-2xl shadow-xl shadow-blue-200 dark:shadow-none">
@@ -3789,9 +3859,9 @@ export default function App() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 md:gap-3">
                       <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white truncate">{selectedStudentForProfile.name}</h3>
-                      <span className="px-2 py-0.5 md:px-3 md:py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs font-black">طالب</span>
+                      <span className="px-2 py-0.5 md:px-3 md:py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs font-black">طالب</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 md:mt-2 text-slate-500 dark:text-slate-400 text-[11px] md:text-sm">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 md:mt-2 text-slate-500 dark:text-zinc-400 text-[11px] md:text-sm">
                       <span className="flex items-center gap-1.5"><Info size={12} className="md:w-[14px]" /> الرقم: {selectedStudentForProfile.id?.slice(0, 8).toUpperCase()}</span>
                       <span className="flex items-center gap-1.5"><GraduationCap size={12} className="md:w-[14px]" /> {selectedStudentForProfile.classId ? `الصف ${selectedStudentForProfile.classId}` : 'غير محدد'}</span>
                       <span className="flex items-center gap-1.5"><Users size={12} className="md:w-[14px]" /> الشعبة: {selectedStudentForProfile.section || 'أ'}</span>
@@ -3811,7 +3881,7 @@ export default function App() {
                       setStudentProfileModalOpen(false);
                       setSelectedStudentForProfile(null);
                     }} 
-                    className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-2.5 md:p-3 rounded-xl md:rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    className="bg-slate-100 dark:bg-[#202022] text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300 p-2.5 md:p-3 rounded-xl md:rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                   >
                     <X size={24} />
                   </button>
@@ -3819,14 +3889,14 @@ export default function App() {
               </div>
 
               {/* Navigation Tabs - Fixed */}
-              <div className="bg-white dark:bg-slate-900 px-4 md:px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
+              <div className="bg-white dark:bg-[#141415] px-4 md:px-8 border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar shrink-0 transition-colors">
                 <div className="flex gap-4 md:gap-6 min-w-max">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setProfileTab(tab.id)}
                       className={`py-4 md:py-5 px-1 relative font-bold text-sm transition-all flex items-center gap-2 ${
-                        profileTab === tab.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                        profileTab === tab.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300'
                       }`}
                     >
                       <tab.icon size={18} />
@@ -3843,7 +3913,7 @@ export default function App() {
               </div>
 
               {/* Content Area - Scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 bg-slate-50/50 dark:bg-slate-950/50">
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 bg-slate-50/50 dark:bg-[#0a0a0b]/50">
                 <AnimatePresence mode="wait">
                   {profileTab === 'overview' && (
                     <motion.div 
@@ -3856,38 +3926,38 @@ export default function App() {
                       <div className="lg:col-span-2 space-y-6 md:space-y-8">
                         {/* Quick Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المعدل التراكمي</p>
+                          <div className="bg-white dark:bg-[#141415] p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
+                            <p className="text-slate-400 dark:text-zinc-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المعدل التراكمي</p>
                             <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.gpa}%</h4>
-                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
+                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-emerald-500" style={{ width: `${stats.gpa}%` }}></div>
                             </div>
                           </div>
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">نسبة الحضور</p>
+                          <div className="bg-white dark:bg-[#141415] p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
+                            <p className="text-slate-400 dark:text-zinc-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">نسبة الحضور</p>
                             <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.attendanceRate}%</h4>
-                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
+                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-blue-500" style={{ width: `${stats.attendanceRate}%` }}></div>
                             </div>
                           </div>
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المهام المكتملة</p>
+                          <div className="bg-white dark:bg-[#141415] p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
+                            <p className="text-slate-400 dark:text-zinc-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المهام المكتملة</p>
                             <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.completedTasks}/{stats.totalTasks}</h4>
-                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
+                            <div className="mt-4 h-1.5 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-orange-500" style={{ width: `${(stats.completedTasks / (stats.totalTasks || 1)) * 100}%` }}></div>
                             </div>
                           </div>
                         </div>
 
                         {/* Parent Information */}
-                        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-[#141415] p-6 md:p-8 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <Users size={20} className="text-blue-600" />
                             بيانات ولي الأمر
                           </h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 transition-colors">
-                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-blue-600 shadow-sm transition-colors">
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#202022]/50 border border-slate-100 dark:border-white/5 transition-colors">
+                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#141415] flex items-center justify-center text-blue-600 shadow-sm transition-colors">
                                 <UserCircle size={24} />
                               </div>
                               <div>
@@ -3895,8 +3965,8 @@ export default function App() {
                                 <p className="text-slate-800 dark:text-white font-bold transition-colors">{selectedStudentForProfile.parentName || 'غير مسجل'}</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 transition-colors">
-                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-emerald-600 shadow-sm transition-colors">
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#202022]/50 border border-slate-100 dark:border-white/5 transition-colors">
+                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#141415] flex items-center justify-center text-emerald-600 shadow-sm transition-colors">
                                 <Phone size={24} />
                               </div>
                               <div>
@@ -3908,26 +3978,26 @@ export default function App() {
                         </div>
 
                         {/* Recent Activity */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-                          <div className="p-5 md:p-6 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center transition-colors">
+                        <div className="bg-white dark:bg-[#141415] rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
+                          <div className="p-5 md:p-6 border-b border-slate-50 dark:border-white/5 flex justify-between items-center transition-colors">
                             <h4 className="font-black text-slate-800 dark:text-white">آخر التحديثات</h4>
                             <button className="text-blue-600 dark:text-blue-400 text-xs font-bold">عرض الكل</button>
                           </div>
                           <div className="p-5 md:p-5 space-y-5">
                             {studentGrades.slice(0, 3).map((g, i) => (
                               <div key={i} className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors">
                                   <Trophy size={20} />
                                 </div>
                                 <div className="flex-1">
-                                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">تم رصد درجة مادة {g.subject}</p>
-                                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 transition-colors">{g.date?.toDate ? format(g.date.toDate(), 'd MMMM yyyy', { locale: ar }) : '-'}</p>
+                                  <p className="text-sm font-bold text-slate-700 dark:text-zinc-300 transition-colors">تم رصد درجة مادة {g.subject}</p>
+                                  <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5 transition-colors">{g.date?.toDate ? format(g.date.toDate(), 'd MMMM yyyy', { locale: ar }) : '-'}</p>
                                 </div>
                                 <span className="font-black text-emerald-600 dark:text-emerald-400 transition-colors">{g.score}%</span>
                               </div>
                             ))}
                             {studentGrades.length === 0 && (
-                              <p className="text-center text-slate-400 dark:text-slate-500 py-4 italic text-sm transition-colors">لا توجد تحديثات أخيرة</p>
+                              <p className="text-center text-slate-400 dark:text-zinc-500 py-4 italic text-sm transition-colors">لا توجد تحديثات أخيرة</p>
                             )}
                           </div>
                         </div>
@@ -4299,20 +4369,20 @@ export default function App() {
                               "max-w-[80%] p-4 rounded-2xl text-sm font-medium shadow-sm",
                               m.senderId === user?.uid 
                                 ? "bg-blue-600 text-white rounded-tr-none" 
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none transition-colors"
+                                : "bg-slate-100 dark:bg-[#202022] text-slate-800 dark:text-zinc-200 rounded-tl-none transition-colors"
                             )}>
                               {m.content}
-                              <p className={cn("text-[9px] mt-1 opacity-60", m.senderId === user?.uid ? "text-blue-100" : "text-slate-400 dark:text-slate-500")}>
+                              <p className={cn("text-[9px] mt-1 opacity-60", m.senderId === user?.uid ? "text-blue-100" : "text-slate-400 dark:text-zinc-500")}>
                                 {m.timestamp?.toDate ? format(m.timestamp.toDate(), 'p', { locale: ar }) : ''}
                               </p>
                             </div>
                           </div>
                         ))}
                         {studentMessages.length === 0 && (
-                          <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-xs italic">ابدأ المحادثة مع {selectedStudentForProfile.name}</div>
+                          <div className="text-center py-10 text-slate-400 dark:text-zinc-500 text-xs italic">ابدأ المحادثة مع {selectedStudentForProfile.name}</div>
                         )}
                       </div>
-                      <div className="p-4 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 transition-colors">
+                      <div className="p-4 border-t border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-[#141415]/50 transition-colors">
                         <form onSubmit={(e) => {
                           e.preventDefault();
                           const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
@@ -4324,7 +4394,7 @@ export default function App() {
                           <input 
                             name="message"
                             placeholder="اكتب رسالتك هنا..."
-                            className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            className="flex-1 bg-white dark:bg-[#202022] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                           />
                           <button type="submit" className="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100 dark:shadow-none">
                             <Send size={20} />
@@ -4337,8 +4407,8 @@ export default function App() {
               </div>
 
               {/* Footer / Quick Actions */}
-              <div className="bg-white dark:bg-slate-900 p-6 border-t border-slate-100 dark:border-slate-800 flex justify-center gap-4 transition-colors">
-                <p className="text-slate-400 dark:text-slate-500 text-xs font-bold">نظام إدارة المدرسة الذكي • الإصدار 2.0</p>
+              <div className="bg-white dark:bg-[#141415] p-6 border-t border-slate-100 dark:border-white/5 flex justify-center gap-4 transition-colors">
+                <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold">نظام إدارة المدرسة الذكي • الإصدار 2.0</p>
               </div>
             </motion.div>
           </div>
@@ -4388,10 +4458,10 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+              className="bg-slate-50 dark:bg-[#0a0a0b] rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-white/5 flex flex-col transition-colors"
             >
               {/* Header */}
-              <div className="bg-white dark:bg-slate-900 p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
+              <div className="bg-white dark:bg-[#141415] p-6 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-blue-200 dark:shadow-none">
                     {selectedTeacherForProfile.name?.charAt(0)}
@@ -4399,9 +4469,9 @@ export default function App() {
                   <div>
                     <div className="flex items-center gap-3">
                       <h3 className="text-2xl font-black text-slate-800 dark:text-white">{selectedTeacherForProfile.name}</h3>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-black">معلم</span>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-black">معلم</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 mt-2 text-slate-500 dark:text-slate-400 text-sm">
+                    <div className="flex flex-wrap items-center gap-4 mt-2 text-slate-500 dark:text-zinc-400 text-sm">
                       <span className="flex items-center gap-1.5"><Mail size={14} /> {selectedTeacherForProfile.email}</span>
                       <span className="flex items-center gap-1.5"><Phone size={14} /> {selectedTeacherForProfile.phone || 'غير مسجل'}</span>
                       <span className="flex items-center gap-1.5">
@@ -4416,19 +4486,19 @@ export default function App() {
                     setTeacherProfileModalOpen(false);
                     setSelectedTeacherForProfile(null);
                   }}
-                  className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                  className="bg-slate-100 dark:bg-[#202022] text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300 p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                 >
                   <X size={24} />
                 </button>
               </div>
 
               {/* Navigation Tabs */}
-              <div className="bg-white dark:bg-slate-900 px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
+              <div className="bg-white dark:bg-[#141415] px-8 border-b border-slate-100 dark:border-white/5 overflow-x-auto no-scrollbar shrink-0 transition-colors">
                 <div className="flex gap-6 min-w-max">
                   <button
                     onClick={() => setTeacherProfileTab('overview')}
                     className={`py-5 px-1 relative font-bold text-sm transition-all flex items-center gap-2 ${
-                      teacherProfileTab === 'overview' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                      teacherProfileTab === 'overview' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                   >
                     <LayoutDashboard size={18} />
@@ -4440,7 +4510,7 @@ export default function App() {
                   <button
                     onClick={() => setTeacherProfileTab('availability')}
                     className={`py-5 px-1 relative font-bold text-sm transition-all flex items-center gap-2 ${
-                      teacherProfileTab === 'availability' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                      teacherProfileTab === 'availability' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                   >
                     <Clock size={18} />
@@ -4465,7 +4535,7 @@ export default function App() {
                     >
                       <div className="md:col-span-2 space-y-8">
                         {/* Subjects Section */}
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-[#141415] p-6 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <BookOpen size={20} className="text-blue-600 dark:text-blue-400" />
                             المواد الدراسية المسندة
@@ -4475,30 +4545,30 @@ export default function App() {
                               selectedTeacherForProfile.subjects.map((subId: string) => {
                                 const sub = subjects.find(s => s.id === subId);
                                 return (
-                                  <div key={subId} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors">
-                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
+                                  <div key={subId} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#202022] border border-slate-100 dark:border-white/10 transition-colors">
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#141415] flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
                                       <Book size={20} />
                                     </div>
                                     <div>
                                       <p className="text-slate-800 dark:text-white font-bold">{sub?.name || subId}</p>
-                                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">{sub?.code || 'بدون رمز'}</p>
+                                      <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase">{sub?.code || 'بدون رمز'}</p>
                                     </div>
                                   </div>
                                 );
                               })
                             ) : (
-                              <div className="col-span-2 text-center py-10 text-slate-400 dark:text-slate-500 italic">لا توجد مواد مسندة حالياً</div>
+                              <div className="col-span-2 text-center py-10 text-slate-400 dark:text-zinc-500 italic">لا توجد مواد مسندة حالياً</div>
                             )}
                           </div>
                         </div>
 
                         {/* Schedule Placeholder */}
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-[#141415] p-6 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <Calendar size={20} className="text-emerald-600 dark:text-emerald-400" />
                             الجدول الأسبوعي
                           </h4>
-                          <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-sm italic">
+                          <div className="text-center py-10 text-slate-400 dark:text-zinc-500 text-sm italic">
                             سيتم عرض الجدول الدراسي للمعلم قريباً
                           </div>
                         </div>
@@ -4506,24 +4576,24 @@ export default function App() {
 
                       <div className="space-y-8">
                         {/* Quick Stats */}
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-[#141415] p-6 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6">إحصائيات سريعة</h4>
                           <div className="space-y-6">
                             <div>
                               <div className="flex justify-between text-xs font-bold mb-2">
-                                <span className="text-slate-400 dark:text-slate-500">عدد الفصول</span>
+                                <span className="text-slate-400 dark:text-zinc-500">عدد الفصول</span>
                                 <span className="text-blue-600 dark:text-blue-400">4 فصول</span>
                               </div>
-                              <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden">
                                 <div className="h-full bg-blue-600 dark:bg-blue-400" style={{ width: '60%' }}></div>
                               </div>
                             </div>
                             <div>
                               <div className="flex justify-between text-xs font-bold mb-2">
-                                <span className="text-slate-400 dark:text-slate-500">عدد الطلاب</span>
+                                <span className="text-slate-400 dark:text-zinc-500">عدد الطلاب</span>
                                 <span className="text-emerald-600 dark:text-emerald-400">120 طالب</span>
                               </div>
-                              <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-slate-100 dark:bg-[#202022] rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-600 dark:bg-emerald-400" style={{ width: '80%' }}></div>
                               </div>
                             </div>
@@ -4532,7 +4602,7 @@ export default function App() {
 
                         {/* Contact Info */}
                         <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-[1.5rem] p-6 text-white shadow-xl">
-                          <h4 className="font-bold mb-6 flex items-center gap-2 text-slate-300 dark:text-slate-400">
+                          <h4 className="font-bold mb-6 flex items-center gap-2 text-slate-300 dark:text-zinc-400">
                             <Info size={18} />
                             معلومات التواصل
                           </h4>
@@ -4570,10 +4640,10 @@ export default function App() {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#141415] p-6 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm transition-colors">
                         <div>
                           <h4 className="text-lg font-black text-slate-800 dark:text-white">تفضيلات الجدول الدراسي</h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">حدد الأوقات المناسبة والمفضلة وغير المناسبة للتدريس</p>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">حدد الأوقات المناسبة والمفضلة وغير المناسبة للتدريس</p>
                         </div>
                         <button 
                           onClick={saveAvailability}
@@ -4586,25 +4656,25 @@ export default function App() {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-2xl transition-colors">
+                        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl transition-colors">
                           <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
                           <span className="text-sm font-bold text-emerald-800 dark:text-emerald-400">وقت مفضل</span>
                         </div>
-                        <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl transition-colors">
+                        <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl transition-colors">
                           <div className="w-4 h-4 rounded-full bg-blue-500"></div>
                           <span className="text-sm font-bold text-blue-800 dark:text-blue-400">وقت مناسب</span>
                         </div>
-                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800 rounded-2xl transition-colors">
+                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-2xl transition-colors">
                           <div className="w-4 h-4 rounded-full bg-rose-500"></div>
                           <span className="text-sm font-bold text-rose-800 dark:text-rose-400">وقت غير مناسب</span>
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm overflow-x-auto transition-colors">
+                      <div className="bg-white dark:bg-[#141415] rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm overflow-x-auto transition-colors">
                         <table className="w-full text-right border-collapse min-w-[600px]">
                           <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 transition-colors">
-                              <th className="px-6 py-4 text-slate-500 dark:text-slate-400 font-bold text-sm">الوقت / اليوم</th>
+                            <tr className="bg-slate-50 dark:bg-[#202022]/50 border-b border-slate-200 dark:border-white/5 transition-colors">
+                              <th className="px-6 py-4 text-slate-500 dark:text-zinc-400 font-bold text-sm">الوقت / اليوم</th>
                               {days.map(day => (
                                 <th key={day} className="px-6 py-4 text-slate-800 dark:text-white font-bold text-sm text-center">{dayLabels[day]}</th>
                               ))}
@@ -4612,8 +4682,8 @@ export default function App() {
                           </thead>
                           <tbody>
                             {slots.map(slot => (
-                              <tr key={slot} className="border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors">
-                                <td className="px-6 py-4 font-bold text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">{slot}</td>
+                              <tr key={slot} className="border-b border-slate-100 dark:border-white/5 last:border-0 transition-colors">
+                                <td className="px-6 py-4 font-bold text-slate-600 dark:text-zinc-400 bg-slate-50/50 dark:bg-[#202022]/20">{slot}</td>
                                 {days.map(day => {
                                   const type = getSlotType(day, slot);
                                   return (
@@ -4625,7 +4695,7 @@ export default function App() {
                                           type === 'preferred' ? "bg-emerald-500 border-emerald-600 text-white shadow-inner" :
                                           type === 'suitable' ? "bg-blue-500 border-blue-600 text-white shadow-inner" :
                                           type === 'unsuitable' ? "bg-rose-500 border-rose-600 text-white shadow-inner" :
-                                          "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 text-slate-300 dark:text-slate-600"
+                                          "bg-slate-50 dark:bg-[#202022] border-slate-100 dark:border-white/10 hover:border-slate-300 dark:hover:border-slate-500 text-slate-300 dark:text-slate-600"
                                         )}
                                       >
                                         {type === 'preferred' && <Trophy size={20} />}
@@ -4642,7 +4712,7 @@ export default function App() {
                         </table>
                       </div>
                       
-                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-6 rounded-2xl flex items-start gap-4 transition-colors">
+                      <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 p-6 rounded-2xl flex items-start gap-4 transition-colors">
                         <Info className="text-amber-600 dark:text-amber-400 shrink-0" size={24} />
                         <div className="text-sm text-amber-800 dark:text-amber-200">
                           <p className="font-bold mb-1">كيفية الاستخدام:</p>
@@ -4660,8 +4730,8 @@ export default function App() {
               </div>
 
               {/* Footer */}
-              <div className="bg-white dark:bg-slate-900 p-6 border-t border-slate-100 dark:border-slate-800 flex justify-center transition-colors">
-                <p className="text-slate-400 dark:text-slate-500 text-xs font-bold">ملف المعلم الرقمي • مدرسة المبدعين</p>
+              <div className="bg-white dark:bg-[#141415] p-6 border-t border-slate-100 dark:border-white/5 flex justify-center transition-colors">
+                <p className="text-slate-400 dark:text-zinc-500 text-xs font-bold">ملف المعلم الرقمي • مدرسة المبدعين</p>
               </div>
             </motion.div>
           </div>
@@ -4690,16 +4760,16 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+            className="bg-white dark:bg-[#141415] rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-white/5 flex flex-col transition-colors"
           >
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-[#202022]/50 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-none">
                   <Calendar size={24} />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-slate-800 dark:text-white">الجدول الدراسي: {selectedClassForSchedule.name}</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">الصف {selectedClassForSchedule.grade} - شعبة {selectedClassForSchedule.section}</p>
+                  <p className="text-slate-500 dark:text-zinc-400 text-sm">الصف {selectedClassForSchedule.grade} - شعبة {selectedClassForSchedule.section}</p>
                 </div>
               </div>
               <button 
@@ -4708,30 +4778,30 @@ export default function App() {
                   setSelectedClassForSchedule(null);
                   setClassSchedule([]);
                 }} 
-                className="bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all"
+                className="bg-white dark:bg-[#202022] text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-white/10 transition-all"
               >
                 <X size={24} />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+              <div className="bg-white dark:bg-[#141415] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden transition-colors">
                 <div className="overflow-x-auto">
                   <table className="w-full text-right border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-800/50">
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">اليوم / الوقت</th>
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">08:00 - 09:00</th>
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">09:00 - 10:00</th>
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">10:00 - 11:00</th>
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">11:00 - 12:00</th>
-                        <th className="p-6 font-black text-slate-500 dark:text-slate-400 text-sm border-b border-slate-100 dark:border-slate-800">12:00 - 13:00</th>
+                      <tr className="bg-slate-50 dark:bg-[#202022]/50">
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">اليوم / الوقت</th>
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">08:00 - 09:00</th>
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">09:00 - 10:00</th>
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">10:00 - 11:00</th>
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">11:00 - 12:00</th>
+                        <th className="p-6 font-black text-slate-500 dark:text-zinc-400 text-sm border-b border-slate-100 dark:border-white/5">12:00 - 13:00</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].map((day) => (
                         <tr key={day}>
-                          <td className="p-6 font-black text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-800/20">
+                          <td className="p-6 font-black text-slate-700 dark:text-zinc-300 bg-slate-50/50 dark:bg-[#202022]/20">
                             {day === 'Sunday' ? 'الأحد' : day === 'Monday' ? 'الاثنين' : day === 'Tuesday' ? 'الثلاثاء' : day === 'Wednesday' ? 'الأربعاء' : 'الخميس'}
                           </td>
                           {['08:00', '09:00', '10:00', '11:00', '12:00'].map(startTime => {
@@ -4739,13 +4809,13 @@ export default function App() {
                             return (
                               <td key={startTime} className="p-4">
                                 {entry ? (
-                                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800 min-w-[120px] transition-colors">
+                                  <div className="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-500/20 min-w-[120px] transition-colors">
                                     <p className="font-black text-blue-700 dark:text-blue-400 text-sm">{entry.subject}</p>
                                     <p className="text-[10px] text-blue-500 dark:text-blue-500 mt-1">{entry.teacherName}</p>
                                     <p className="text-[9px] text-blue-400 dark:text-blue-600 mt-0.5">{entry.room}</p>
                                   </div>
                                 ) : (
-                                  <div className="h-16 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl"></div>
+                                  <div className="h-16 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl"></div>
                                 )}
                               </td>
                             );
@@ -4781,7 +4851,7 @@ export default function App() {
       </div>
 
       <Card className="overflow-hidden p-0">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4 transition-colors">
+        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center gap-4 transition-colors">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
@@ -4789,13 +4859,13 @@ export default function App() {
               placeholder="البحث عن فصل (الاسم أو الصف)..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
         </div>
         <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-right">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm uppercase transition-colors">
+            <thead className="bg-slate-50 dark:bg-[#202022] text-slate-500 dark:text-zinc-400 text-sm uppercase transition-colors">
               <tr>
                 <th className="px-6 py-4 font-semibold">اسم الفصل</th>
                 <th className="px-6 py-4 font-semibold">الصف / الشعبة</th>
@@ -4813,12 +4883,12 @@ export default function App() {
                   <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs">
                           {c.name.charAt(0)}
                         </div>
                         <button 
                           onClick={() => openClassSchedule(c)}
-                          className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-right"
+                          className="font-medium text-slate-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-right"
                         >
                           {c.name}
                         </button>
@@ -4826,21 +4896,21 @@ export default function App() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold">
+                        <span className="px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold">
                           الصف {c.grade}
                         </span>
                         {c.section && (
-                          <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold">
+                          <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-[#202022] text-slate-600 dark:text-zinc-400 text-xs font-bold">
                             شعبة {c.section}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
+                    <td className="px-6 py-4 text-slate-500 dark:text-zinc-400 text-sm">
                       {teacher ? teacher.name : 'غير محدد'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">{studentsInClass} طالب</span>
+                      <span className="text-slate-700 dark:text-zinc-300 font-medium">{studentsInClass} طالب</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -4863,7 +4933,7 @@ export default function App() {
               })}
               {filteredClasses.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 transition-colors">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-zinc-500 transition-colors">
                     {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد فصول مسجلة حالياً'}
                   </td>
                 </tr>
@@ -4882,7 +4952,7 @@ export default function App() {
               <div key={c.id} className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-base">
+                    <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-base">
                       {c.name.charAt(0)}
                     </div>
                     <div>
@@ -4893,11 +4963,11 @@ export default function App() {
                         {c.name}
                       </button>
                       <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 rounded">
                           الصف {c.grade}
                         </span>
                         {c.section && (
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-[#202022] px-1.5 py-0.5 rounded">
                             شعبة {c.section}
                           </span>
                         )}
@@ -4907,13 +4977,13 @@ export default function App() {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => openEditClassModal(c)}
-                      className="p-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-xl"
+                      className="p-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded-xl"
                     >
                       <Edit size={16} />
                     </button>
                     <button 
                       onClick={() => handleDeleteClass(c.id, c.name)}
-                      className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 rounded-xl"
+                      className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 rounded-xl"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -4921,20 +4991,20 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-zinc-400">
                     <User size={14} className="opacity-70" />
                     <span className="font-medium truncate max-w-[120px]">{teacher ? teacher.name : 'غير محدد'}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-zinc-400">
                     <Users size={14} className="opacity-70" />
-                    <span className="font-bold text-slate-700 dark:text-slate-200">{studentsInClass} طالب</span>
+                    <span className="font-bold text-slate-700 dark:text-zinc-200">{studentsInClass} طالب</span>
                   </div>
                 </div>
               </div>
             );
           })}
           {filteredClasses.length === 0 && (
-            <div className="p-12 text-center text-slate-400 dark:text-slate-500 transition-colors">
+            <div className="p-12 text-center text-slate-400 dark:text-zinc-500 transition-colors">
               {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد فصول مسجلة حالياً'}
             </div>
           )}
@@ -4986,7 +5056,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors">
+        <div className="p-4 bg-white dark:bg-[#141415] rounded-2xl border border-slate-200 dark:border-white/5 flex items-center gap-4 transition-colors">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
@@ -4994,25 +5064,25 @@ export default function App() {
               placeholder="البحث عن طالب (الاسم أو البريد)..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#202022] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
         </div>
 
         <div className="space-y-4">
           {sortedGrades.map((gradeId) => (
-            <div key={gradeId} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors">
+            <div key={gradeId} className="bg-white dark:bg-[#141415] rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm transition-colors">
               <button 
                 onClick={() => setExpandedGrades(prev => prev.includes(gradeId) ? prev.filter(id => id !== gradeId) : [...prev, gradeId])}
                 className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                     <BookOpen size={20} />
                   </div>
                   <div className="text-right">
                     <h3 className="font-bold text-slate-800 dark:text-white">{getGradeName(gradeId)}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
                       {(Object.values(groupedStudents[gradeId]) as any[]).reduce((sum: number, students: any) => sum + students.length, 0)} طالب
                     </p>
                   </div>
@@ -5026,7 +5096,7 @@ export default function App() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20"
+                    className="border-t border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-[#202022]/20"
                   >
                     <div className="p-4 space-y-3">
                       {Object.keys(groupedStudents[gradeId]).sort().map((sectionName) => {
@@ -5034,17 +5104,17 @@ export default function App() {
                         const sectionStudents = groupedStudents[gradeId][sectionName];
                         
                         return (
-                          <div key={sectionKey} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm transition-colors">
+                          <div key={sectionKey} className="bg-white dark:bg-[#141415] rounded-xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm transition-colors">
                             <button 
                               onClick={() => setExpandedSections(prev => prev.includes(sectionKey) ? prev.filter(id => id !== sectionKey) : [...prev, sectionKey])}
                               className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                                   <Users size={16} />
                                 </div>
-                                <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">شعبة: {sectionName}</span>
-                                <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{sectionStudents.length} طلاب</span>
+                                <span className="font-bold text-slate-700 dark:text-zinc-300 text-sm">شعبة: {sectionName}</span>
+                                <span className="text-xs text-slate-400 dark:text-zinc-500 bg-slate-100 dark:bg-[#202022] px-2 py-0.5 rounded-full">{sectionStudents.length} طلاب</span>
                               </div>
                               {expandedSections.includes(sectionKey) ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronLeft size={16} className="text-slate-400" />}
                             </button>
@@ -5055,13 +5125,13 @@ export default function App() {
                                   initial={{ height: 0, opacity: 0 }}
                                   animate={{ height: 'auto', opacity: 1 }}
                                   exit={{ height: 0, opacity: 0 }}
-                                  className="border-t border-slate-50 dark:border-slate-800"
+                                  className="border-t border-slate-50 dark:border-white/5"
                                 >
                                   <div className="p-2">
                                     {/* Desktop Table View */}
                                     <div className="hidden sm:block overflow-x-auto">
                                       <table className="w-full text-right text-sm">
-                                        <thead className="text-slate-400 dark:text-slate-500 text-xs uppercase">
+                                        <thead className="text-slate-400 dark:text-zinc-500 text-xs uppercase">
                                           <tr>
                                             <th className="px-4 py-2 font-semibold">الاسم</th>
                                             <th className="px-4 py-2 font-semibold">البريد</th>
@@ -5073,18 +5143,18 @@ export default function App() {
                                             <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                               <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                  <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[10px]">
+                                                  <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[10px]">
                                                     {s.name.charAt(0)}
                                                   </div>
                                                   <button 
                                                     onClick={() => openStudentProfile(s)}
-                                                    className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors text-right"
+                                                    className="font-medium text-slate-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors text-right"
                                                   >
                                                     {s.name}
                                                   </button>
                                                 </div>
                                               </td>
-                                              <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">{s.email}</td>
+                                              <td className="px-4 py-3 text-slate-500 dark:text-zinc-400 text-xs">{s.email}</td>
                                               <td className="px-4 py-3">
                                                 <div className="flex items-center gap-3">
                                                   <button onClick={() => openStudentProfile(s)} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 transition-colors" title="الملف الشخصي">
@@ -5118,24 +5188,24 @@ export default function App() {
                                     {/* Mobile Card View */}
                                     <div className="sm:hidden space-y-3">
                                       {sectionStudents.map((s: any) => (
-                                        <div key={s.id} className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
+                                        <div key={s.id} className="bg-white dark:bg-[#202022]/50 p-4 rounded-xl border border-slate-100 dark:border-white/5 transition-colors">
                                           <div className="flex items-center justify-between gap-4 mb-3">
                                             <div className="flex items-center gap-3 min-w-0">
-                                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
+                                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
                                                 {s.name.charAt(0)}
                                               </div>
                                               <div className="min-w-0">
                                                 <button 
                                                   onClick={() => openStudentProfile(s)}
-                                                  className="font-bold text-slate-800 dark:text-slate-200 hover:text-blue-600 transition-colors text-sm truncate block w-full text-right"
+                                                  className="font-bold text-slate-800 dark:text-zinc-200 hover:text-blue-600 transition-colors text-sm truncate block w-full text-right"
                                                 >
                                                   {s.name}
                                                 </button>
-                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{s.email}</p>
+                                                <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{s.email}</p>
                                               </div>
                                             </div>
                                           </div>
-                                          <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-slate-800">
+                                          <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-white/5">
                                             <div className="flex gap-4">
                                               <button onClick={() => openStudentProfile(s)} className="text-emerald-600 dark:text-emerald-400 p-1">
                                                 <ExternalLink size={18} />
@@ -5175,7 +5245,7 @@ export default function App() {
             </div>
           ))}
           {sortedGrades.length === 0 && (
-            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 transition-colors">
+            <div className="text-center py-20 bg-white dark:bg-[#141415] rounded-2xl border border-slate-200 dark:border-white/5 text-slate-400 dark:text-zinc-500 transition-colors">
               {searchTerm ? 'لا توجد نتائج تطابق بحثك' : 'لا يوجد طلاب مسجلين حالياً'}
             </div>
           )}
@@ -5187,7 +5257,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className={cn(
-        "min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors", 
+        "min-h-screen bg-slate-50 dark:bg-[#0a0a0b] flex transition-colors", 
         darkMode && "dark"
       )} dir="rtl">
       {/* Sidebar Overlay for Mobile */}
@@ -5212,7 +5282,7 @@ export default function App() {
           x: isSidebarOpen ? 0 : 280 
         }}
         className={cn(
-          "bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-screen sticky top-0 overflow-hidden z-50 transition-colors",
+          "bg-white dark:bg-[#141415] border-l border-slate-200 dark:border-white/5 h-screen sticky top-0 overflow-hidden z-50 transition-colors",
           "fixed lg:sticky lg:translate-x-0"
         )}
       >
@@ -5283,7 +5353,7 @@ export default function App() {
             <SidebarItem icon={Settings} label="إعدادات النظام" active={activeTab === 'settings'} onClick={() => handleSidebarItemClick('settings')} />
           </nav>
 
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-6 border-t border-slate-100 dark:border-white/5">
             <button 
               onClick={logout}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all font-medium"
@@ -5298,11 +5368,11 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden relative">
         {/* Header */}
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-40 px-6 md:px-10 py-6 border-b border-slate-100/50 dark:border-slate-800/50 flex justify-between items-center transition-all duration-500">
+        <header className="bg-white/80 dark:bg-[#141415]/80 backdrop-blur-xl sticky top-0 z-40 px-6 md:px-10 py-6 border-b border-slate-100/50 dark:border-white/5/50 flex justify-between items-center transition-all duration-500">
           <div className="flex items-center gap-4 md:gap-6">
             <button 
               onClick={() => setSidebarOpen(!isSidebarOpen)}
-              className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm rounded-[1rem] text-slate-500 dark:text-slate-400 transition-all"
+              className="p-2.5 bg-slate-50 dark:bg-[#202022] border border-slate-200/50 dark:border-white/5 hover:bg-white dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm rounded-[1rem] text-slate-500 dark:text-zinc-400 transition-all"
             >
               {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -5342,15 +5412,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
+            <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-[#202022]/50 rounded-2xl border border-slate-200/50 dark:border-white/5">
               <button
                 onClick={() => setDarkMode(!darkMode)}
-                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all"
+                className="p-2.5 rounded-xl text-slate-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all"
               >
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
-              <button className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all relative">
+              <button className="p-2.5 rounded-xl text-slate-500 dark:text-zinc-400 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all relative">
                 <Bell size={20} />
                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900" />
               </button>
@@ -5359,11 +5429,11 @@ export default function App() {
             <div className="flex items-center gap-4">
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-black text-slate-800 dark:text-white leading-tight">{profile?.name}</p>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{profile?.role}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mt-0.5">{profile?.role}</p>
               </div>
               <div className="relative group cursor-pointer">
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1.25rem] bg-gradient-to-br from-blue-600 to-indigo-700 p-0.5 shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-all duration-500">
-                  <div className="w-full h-full rounded-[1.1rem] bg-white dark:bg-slate-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base md:text-lg">
+                  <div className="w-full h-full rounded-[1.1rem] bg-white dark:bg-[#141415] flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base md:text-lg">
                     {profile?.name?.charAt(0)}
                   </div>
                 </div>
@@ -5425,32 +5495,32 @@ export default function App() {
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">الإشعارات</h2>
                   {notifications.map((n: any) => (
-                    <Card key={n.id} className={cn("flex gap-4 items-start", !n.read && "border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/20")}>
-                      <div className={cn("p-2 rounded-lg", !n.read ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500")}>
+                    <Card key={n.id} className={cn("flex gap-4 items-start", !n.read && "border-blue-200 dark:border-blue-500/20 bg-blue-50/30 dark:bg-blue-500/10")}>
+                      <div className={cn("p-2 rounded-lg", !n.read ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" : "bg-slate-100 dark:bg-[#202022] text-slate-400 dark:text-zinc-500")}>
                         <Bell size={20} />
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-1">
                           <h4 className="font-bold text-slate-800 dark:text-white">{n.title}</h4>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">{n.date?.toDate ? format(n.date.toDate(), 'PPp', { locale: ar }) : ''}</span>
+                          <span className="text-xs text-slate-400 dark:text-zinc-500">{n.date?.toDate ? format(n.date.toDate(), 'PPp', { locale: ar }) : ''}</span>
                         </div>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm">{n.message}</p>
+                        <p className="text-slate-600 dark:text-zinc-400 text-sm">{n.message}</p>
                       </div>
                     </Card>
                   ))}
                   {notifications.length === 0 && (
-                    <div className="text-center py-20 text-slate-400 dark:text-slate-500">لا توجد إشعارات حالياً</div>
+                    <div className="text-center py-20 text-slate-400 dark:text-zinc-500">لا توجد إشعارات حالياً</div>
                   )}
                 </div>
               )}
               {/* Other tabs would be implemented similarly */}
               {!['dashboard', 'students', 'notifications', 'teachers', 'classes', 'attendance', 'finance', 'academic', 'logistics', 'communication', 'settings'].includes(activeTab) && (
-                <div className="flex flex-col items-center justify-center py-32 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 shadow-inner">
-                  <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 animate-pulse text-slate-300">
+                <div className="flex flex-col items-center justify-center py-32 text-slate-400 dark:text-zinc-500 bg-white dark:bg-[#141415] rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-white/5 shadow-inner">
+                  <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-[#202022] flex items-center justify-center mb-8 animate-pulse text-slate-300">
                     <Clock size={48} />
                   </div>
                   <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">هذه الصفحة قيد التطوير</h2>
-                  <p className="text-slate-500 dark:text-slate-400">نحن نعمل بجد لإطلاق ميزات {activeTab} في أقرب وقت.</p>
+                  <p className="text-slate-500 dark:text-zinc-400">نحن نعمل بجد لإطلاق ميزات {activeTab} في أقرب وقت.</p>
                 </div>
               )}
             </motion.div>

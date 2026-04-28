@@ -65,7 +65,7 @@ export const AcademicModule: React.FC<AcademicModuleProps> = ({
           الشؤون الأكاديمية والجدولة
         </h2>
         
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
+        <div className="flex bg-slate-100 dark:bg-[#202022] p-1 rounded-2xl overflow-x-auto scrollbar-hide max-w-full">
           <div className="flex min-w-max">
             {[
               { id: 'scheduler', label: 'الجدولة الذكية', icon: BrainCircuit },
@@ -79,7 +79,7 @@ export const AcademicModule: React.FC<AcademicModuleProps> = ({
                   "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap",
                   activeSubTab === tab.id 
                     ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    : "text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
                 <tab.icon size={16} className="md:size-[18px]" />
@@ -258,7 +258,7 @@ const MasterSchedulerSection = ({
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 dark:border-slate-800 max-h-[90vh] flex flex-col"
+              className="relative w-full max-w-lg bg-white dark:bg-[#141415] rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 dark:border-white/5 max-h-[90vh] flex flex-col"
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-black text-slate-800 dark:text-white">إدارة الأوقات والاستراحات</h3>
@@ -269,7 +269,7 @@ const MasterSchedulerSection = ({
 
               <div className="flex-1 overflow-y-auto space-y-3 mb-6 pr-2">
                 {editingSlots.map((slot, idx) => (
-                  <div key={idx} className="flex gap-3 items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <div key={idx} className="flex gap-3 items-center bg-slate-50 dark:bg-[#202022] p-3 rounded-2xl border border-slate-100 dark:border-white/10">
                     <span className="text-xs font-black text-slate-400 w-4">{idx + 1}</span>
                     {slot.type === 'break' ? (
                       <div className="flex-1 flex items-center gap-3">
@@ -278,7 +278,7 @@ const MasterSchedulerSection = ({
                           type="text" 
                           value={slot.label} 
                           onChange={(e) => handleUpdateEditingSlot(idx, 'label', e.target.value)}
-                          className="flex-1 bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          className="flex-1 bg-white dark:bg-[#141415] border-none rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
                           placeholder="اسم الاستراحة..."
                         />
                       </div>
@@ -289,7 +289,7 @@ const MasterSchedulerSection = ({
                             type="time" 
                             value={slot.start} 
                             onChange={(e) => handleUpdateEditingSlot(idx, 'start', e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-indigo-500/20 text-center"
+                            className="w-full bg-white dark:bg-[#141415] border-none rounded-xl px-4 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-indigo-500/20 text-center"
                           />
                         </div>
                         <span className="text-slate-400 font-bold">-</span>
@@ -298,7 +298,7 @@ const MasterSchedulerSection = ({
                             type="time" 
                             value={slot.end} 
                             onChange={(e) => handleUpdateEditingSlot(idx, 'end', e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-indigo-500/20 text-center"
+                            className="w-full bg-white dark:bg-[#141415] border-none rounded-xl px-4 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-indigo-500/20 text-center"
                           />
                         </div>
                       </div>
@@ -323,7 +323,7 @@ const MasterSchedulerSection = ({
                 </button>
                 <button 
                   onClick={handleAddEditingBreak}
-                  className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm"
+                  className="bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm"
                 >
                   <Plus size={16} />
                   إضافة استراحة
@@ -357,7 +357,7 @@ const MasterSchedulerSection = ({
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 dark:border-slate-800"
+              className="relative w-full max-w-md bg-white dark:bg-[#141415] rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 dark:border-white/5"
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-black text-slate-800 dark:text-white">تعديل حصة دراسية</h3>
@@ -378,7 +378,7 @@ const MasterSchedulerSection = ({
                         content: { ...editingSlot.content, subject: sub?.name || '', subjectId: sub?.id }
                       });
                     }}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full bg-slate-50 dark:bg-[#202022] border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
                     required
                   >
                     <option value="">اختر المادة</option>
@@ -396,7 +396,7 @@ const MasterSchedulerSection = ({
                       ...editingSlot,
                       content: { ...editingSlot.content, teacherId: e.target.value, teacherName: teachers.find(t => t.id === e.target.value)?.name }
                     })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full bg-slate-50 dark:bg-[#202022] border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
                     required
                   >
                     <option value="">اختر المعلم</option>
@@ -416,7 +416,7 @@ const MasterSchedulerSection = ({
                       content: { ...editingSlot.content, room: e.target.value }
                     })}
                     placeholder="مثال: قاعة 102"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full bg-slate-50 dark:bg-[#202022] border-none rounded-2xl px-5 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20"
                     required
                   />
                 </div>
@@ -459,13 +459,13 @@ const MasterSchedulerSection = ({
 
                 <button 
                   onClick={openManageSlots}
-                  className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-sm"
+                  className="w-full bg-slate-100 dark:bg-[#202022] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-white/10 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-sm"
                 >
                   <Clock size={18} className="text-indigo-600" />
                   <span className="text-sm">إدارة الأوقات والاستراحات</span>
                 </button>
                 
-                <button className="w-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700">
+                <button className="w-full bg-white dark:bg-[#202022] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-white/10 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700">
                   <Download size={18} />
                   <span className="text-sm">تصدير PDF للفصول</span>
                 </button>
@@ -475,11 +475,11 @@ const MasterSchedulerSection = ({
             <div className="space-y-4">
               <h4 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-widest">إحصائيات الجدول</h4>
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/20 text-center">
+                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-100 dark:border-blue-500/20/20 text-center">
                   <p className="text-[8px] font-black text-blue-400 uppercase mb-1">نسبة الإنجاز</p>
                   <p className="text-lg font-black text-blue-700 dark:text-blue-400">92%</p>
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/20 text-center">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-100 dark:border-emerald-500/20/20 text-center">
                   <p className="text-[8px] font-black text-emerald-400 uppercase mb-1">التضاربات</p>
                   <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">0</p>
                 </div>
@@ -487,7 +487,7 @@ const MasterSchedulerSection = ({
             </div>
           </div>
 
-          <div className="p-5 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/20 rounded-3xl">
+          <div className="p-5 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/20/20 rounded-3xl">
             <h5 className="text-amber-700 dark:text-amber-400 font-black text-xs flex items-center gap-2 mb-3">
               <AlertCircle size={14} />
               رؤى ذكية (AI Analysis)
@@ -499,7 +499,7 @@ const MasterSchedulerSection = ({
         </Card>
 
         <Card className="lg:col-span-3 overflow-hidden flex flex-col min-h-[600px]">
-          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+          <div className="p-6 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50 dark:bg-[#141415]/50 backdrop-blur-sm">
             <div>
               <h4 className="font-black text-slate-800 dark:text-white text-xl">لوحة الجدولة الأكاديمية</h4>
               <p className="text-xs text-slate-500 mt-1">إدارة وضبط الحصص الأسبوعية للفصول</p>
@@ -509,7 +509,7 @@ const MasterSchedulerSection = ({
               <select 
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-xs font-black px-5 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                className="bg-slate-100 dark:bg-[#202022] border-none rounded-xl text-xs font-black px-5 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
               >
                 {classes.map(c => (
                   <option key={c.id} value={c.id}>{c.name} - الصف {c.grade}{c.section}</option>
@@ -518,22 +518,22 @@ const MasterSchedulerSection = ({
             </div>
           </div>
           
-          <div className="flex-1 overflow-x-auto p-6 bg-slate-50/30 dark:bg-slate-950/20">
+          <div className="flex-1 overflow-x-auto p-6 bg-slate-50/30 dark:bg-[#0a0a0b]/20">
             {/* Desktop View */}
-            <div className="hidden lg:grid min-w-[900px] grid-cols-6 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/20 dark:shadow-none">
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-5 font-black text-slate-400 text-center text-[10px] uppercase tracking-widest flex items-center justify-center border-b border-l border-slate-200 dark:border-slate-800">الوقت / اليوم</div>
+            <div className="hidden lg:grid min-w-[900px] grid-cols-6 border border-slate-200 dark:border-white/5 rounded-[2.5rem] overflow-hidden bg-white dark:bg-[#141415] shadow-xl shadow-slate-200/20 dark:shadow-none">
+              <div className="bg-slate-50 dark:bg-[#202022]/80 p-5 font-black text-slate-400 text-center text-[10px] uppercase tracking-widest flex items-center justify-center border-b border-l border-slate-200 dark:border-white/5">الوقت / اليوم</div>
               {daysAr.map(day => (
-                <div key={day.id} className="bg-slate-50 dark:bg-slate-800/80 p-5 font-black text-slate-700 dark:text-slate-200 text-center text-sm border-b border-l last:border-l-0 border-slate-200 dark:border-slate-800">{day.label}</div>
+                <div key={day.id} className="bg-slate-50 dark:bg-[#202022]/80 p-5 font-black text-slate-700 dark:text-zinc-200 text-center text-sm border-b border-l last:border-l-0 border-slate-200 dark:border-white/5">{day.label}</div>
               ))}
               
               {timeSlots.map((slot, idx) => (
                 <React.Fragment key={idx}>
-                  <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-black text-slate-400 flex flex-col items-center justify-center border-b border-l border-slate-100 dark:border-slate-800 tabular-nums">
+                  <div className="p-4 bg-slate-50/50 dark:bg-[#202022]/30 text-[10px] font-black text-slate-400 flex flex-col items-center justify-center border-b border-l border-slate-100 dark:border-white/5 tabular-nums">
                     {slot.type === 'break' ? (
                       <span className="rotate-90 md:rotate-0 tracking-widest text-slate-300">-----</span>
                     ) : (
                       <>
-                        <span className="text-slate-600 dark:text-slate-300">{slot.start}</span>
+                        <span className="text-slate-600 dark:text-zinc-300">{slot.start}</span>
                         <div className="w-px h-2 bg-slate-200 dark:bg-slate-700 my-1" />
                         <span>{slot.end}</span>
                       </>
@@ -541,7 +541,7 @@ const MasterSchedulerSection = ({
                   </div>
                   
                   {slot.type === 'break' ? (
-                    <div className="col-span-5 p-2 bg-slate-100/30 dark:bg-slate-800/50 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
+                    <div className="col-span-5 p-2 bg-slate-100/30 dark:bg-[#202022]/50 flex items-center justify-center border-b border-slate-100 dark:border-white/5">
                        <div className="flex items-center gap-4">
                          <div className="h-px w-20 bg-gradient-to-r from-transparent to-slate-200 dark:to-slate-700" />
                          <span className="text-[10px] font-black tracking-[0.5em] text-slate-300 dark:text-slate-600 uppercase">الاستراحة</span>
@@ -554,20 +554,20 @@ const MasterSchedulerSection = ({
                       const subColor = subjects.find(s => s.name === content?.subject)?.color || 'blue';
                       
                       const colorClasses: Record<string, string> = {
-                        blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-400",
-                        emerald: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-700 dark:text-emerald-400",
-                        amber: "bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-700 dark:text-amber-400",
-                        rose: "bg-rose-50 dark:bg-rose-900/20 border-rose-500 text-rose-700 dark:text-rose-400",
+                        blue: "bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400",
+                        emerald: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400",
+                        amber: "bg-amber-50 dark:bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-400",
+                        rose: "bg-rose-50 dark:bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400",
                         indigo: "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-400",
-                        orange: "bg-orange-50 dark:bg-orange-900/20 border-orange-500 text-orange-700 dark:text-orange-400",
+                        orange: "bg-orange-50 dark:bg-orange-500/10 border-orange-500 text-orange-700 dark:text-orange-400",
                         cyan: "bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400",
                         purple: "bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-700 dark:text-purple-400",
                         pink: "bg-pink-50 dark:bg-pink-900/20 border-pink-500 text-pink-700 dark:text-pink-400",
-                        slate: "bg-slate-50 dark:bg-slate-800/50 border-slate-400 text-slate-700 dark:text-slate-300"
+                        slate: "bg-slate-50 dark:bg-[#202022]/50 border-slate-400 text-slate-700 dark:text-zinc-300"
                       };
 
                       return (
-                        <div key={day.id} className="p-2 border-b border-l last:border-l-0 border-slate-100 dark:border-slate-800 min-h-[100px] group relative">
+                        <div key={day.id} className="p-2 border-b border-l last:border-l-0 border-slate-100 dark:border-white/5 min-h-[100px] group relative">
                           <AnimatePresence mode="wait">
                             {content ? (
                               <motion.div 
@@ -594,7 +594,7 @@ const MasterSchedulerSection = ({
                             ) : (
                               <div 
                                 onClick={() => openEditSlot(day.id, slot, null)}
-                                className="h-full w-full border-2 border-dashed border-slate-100 dark:border-slate-800/50 rounded-2xl flex items-center justify-center group-hover:border-indigo-200 dark:group-hover:border-indigo-900 transition-all cursor-pointer"
+                                className="h-full w-full border-2 border-dashed border-slate-100 dark:border-white/5/50 rounded-2xl flex items-center justify-center group-hover:border-indigo-200 dark:group-hover:border-indigo-900 transition-all cursor-pointer"
                               >
                                 <Plus size={16} className="text-slate-100 dark:text-slate-800 group-hover:text-indigo-400 transition-colors" />
                               </div>
@@ -612,30 +612,30 @@ const MasterSchedulerSection = ({
             <div className="lg:hidden space-y-6 pb-8">
               {daysAr.map(day => (
                 <div key={day.id} className="space-y-3">
-                  <h5 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-sm sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-2 z-10">
+                  <h5 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-sm sticky top-0 bg-white/80 dark:bg-[#141415]/80 backdrop-blur-md py-2 z-10">
                     <Calendar size={14} className="text-indigo-600" />
                     {day.label}
                   </h5>
                   <div className="grid grid-cols-1 gap-3">
                     {timeSlots.map((slot, idx) => {
                       if (slot.type === 'break') return (
-                        <div key={idx} className="bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-2 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                        <div key={idx} className="bg-slate-100/50 dark:bg-[#202022]/50 rounded-xl p-2 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">
                           الاستراحة
                         </div>
                       );
                       const content = getSlotContent(day.id, slot.start!, slot.end!);
                       const subColor = subjects.find(s => s.name === content?.subject)?.color || 'blue';
                       const colorClasses: Record<string, string> = {
-                        blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-500",
-                        emerald: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500",
-                        amber: "bg-amber-50 dark:bg-amber-900/20 border-amber-500",
-                        rose: "bg-rose-50 dark:bg-rose-900/20 border-rose-500",
+                        blue: "bg-blue-50 dark:bg-blue-500/10 border-blue-500",
+                        emerald: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500",
+                        amber: "bg-amber-50 dark:bg-amber-500/10 border-amber-500",
+                        rose: "bg-rose-50 dark:bg-rose-500/10 border-rose-500",
                         indigo: "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500",
-                        orange: "bg-orange-50 dark:bg-orange-900/20 border-orange-500",
+                        orange: "bg-orange-50 dark:bg-orange-500/10 border-orange-500",
                         cyan: "bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500",
                         purple: "bg-purple-50 dark:bg-purple-900/20 border-purple-500",
                         pink: "bg-pink-50 dark:bg-pink-900/20 border-pink-500",
-                        slate: "bg-slate-50 dark:bg-slate-800/50 border-slate-400"
+                        slate: "bg-slate-50 dark:bg-[#202022]/50 border-slate-400"
                       };
 
                       return (
@@ -643,7 +643,7 @@ const MasterSchedulerSection = ({
                           key={idx} 
                           onClick={() => openEditSlot(day.id, slot, content)}
                           className={cn(
-                            "flex items-center gap-4 p-3 rounded-2xl border-r-4 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700/50",
+                            "flex items-center gap-4 p-3 rounded-2xl border-r-4 bg-white dark:bg-[#202022] shadow-sm border border-slate-100 dark:border-white/5",
                             content ? colorClasses[subColor] : "border-dashed"
                           )}
                         >
@@ -680,7 +680,7 @@ const ExamManagementSection = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6 bg-white dark:bg-slate-900 border-none shadow-xl">
+        <Card className="p-6 bg-white dark:bg-[#141415] border-none shadow-xl">
            <div className="flex items-center gap-4 mb-6">
              <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl">
                <ClipboardList size={24} />
@@ -693,8 +693,8 @@ const ExamManagementSection = () => {
            
            <div className="space-y-4">
              {[1, 2, 3].map(i => (
-               <div key={i} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl group hover:bg-indigo-50 transition-all cursor-pointer">
-                 <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 shadow-sm flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300">
+               <div key={i} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-[#202022]/50 rounded-2xl group hover:bg-indigo-50 transition-all cursor-pointer">
+                 <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 shadow-sm flex flex-col items-center justify-center font-bold text-slate-700 dark:text-zinc-300">
                    <span className="text-xs">MAY</span>
                    <span className="text-lg leading-none">{15+i}</span>
                  </div>
@@ -710,13 +710,13 @@ const ExamManagementSection = () => {
              ))}
            </div>
            
-           <button className="w-full mt-6 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-xl text-sm border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:text-indigo-600 transition-all">
+           <button className="w-full mt-6 bg-slate-50 dark:bg-[#202022] text-slate-600 dark:text-zinc-400 font-bold py-3 rounded-xl text-sm border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-indigo-500 hover:text-indigo-600 transition-all">
              + إضافة امتحان للجدول
            </button>
         </Card>
 
         <Card className="lg:col-span-2 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
             <h4 className="font-black text-slate-800 dark:text-white">رصد الدرجات والشهادات</h4>
             <div className="flex gap-2">
               <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-100">
@@ -727,35 +727,35 @@ const ExamManagementSection = () => {
           
           <div className="p-6">
             <div className="flex flex-wrap gap-4 mb-6">
-              <select className="flex-1 min-w-[150px] bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold px-4 py-2">
+              <select className="flex-1 min-w-[150px] bg-slate-50 dark:bg-[#202022] border-none rounded-xl text-xs font-bold px-4 py-2">
                 <option>الفصل الدراسي الأول</option>
                 <option>الفصل الدراسي الثاني</option>
               </select>
-              <select className="flex-1 min-w-[150px] bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold px-4 py-2">
+              <select className="flex-1 min-w-[150px] bg-slate-50 dark:bg-[#202022] border-none rounded-xl text-xs font-bold px-4 py-2">
                 <option>الصف العاشر - أ</option>
               </select>
               <div className="relative flex-1 min-w-[200px]">
                 <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="بحث عن طالب..." className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold px-10 py-2" />
+                <input type="text" placeholder="بحث عن طالب..." className="w-full bg-slate-50 dark:bg-[#202022] border-none rounded-xl text-xs font-bold px-10 py-2" />
               </div>
             </div>
 
             <div className="overflow-x-auto hidden sm:block">
               <table className="w-full text-right border-collapse">
-                <thead className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 text-[10px] uppercase font-bold">
+                <thead className="bg-slate-50/50 dark:bg-[#202022]/50 text-slate-400 text-[10px] uppercase font-bold">
                   <tr>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">الطالب</th>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">العربية</th>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">الرياضيات</th>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">العلوم</th>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">المتوسط</th>
-                    <th className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">الشهادة</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">الطالب</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">العربية</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">الرياضيات</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">العلوم</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">المتوسط</th>
+                    <th className="px-4 py-3 border-b border-slate-100 dark:border-white/5">الشهادة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {[1, 2, 3, 4, 5].map(i => (
                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300">سلطان محمد {i}</td>
+                      <td className="px-4 py-3 text-sm font-bold text-slate-700 dark:text-zinc-300">سلطان محمد {i}</td>
                       <td className="px-4 py-3"><input type="number" defaultValue={85 + i} className="w-12 bg-transparent text-center text-xs font-bold text-blue-600 focus:outline-none" /></td>
                       <td className="px-4 py-3"><input type="number" defaultValue={70 + i * 2} className="w-12 bg-transparent text-center text-xs font-bold text-blue-600 focus:outline-none" /></td>
                       <td className="px-4 py-3"><input type="number" defaultValue={92 - i} className="w-12 bg-transparent text-center text-xs font-bold text-blue-600 focus:outline-none" /></td>
@@ -781,15 +781,15 @@ const ExamManagementSection = () => {
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-xl text-center">
+                    <div className="bg-slate-50 dark:bg-[#202022]/50 p-2 rounded-xl text-center">
                       <p className="text-[8px] text-slate-400 uppercase mb-1">العربية</p>
                       <input type="number" defaultValue={85+i} className="w-full bg-transparent text-center text-xs font-black text-blue-600 outline-none" />
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-xl text-center">
+                    <div className="bg-slate-50 dark:bg-[#202022]/50 p-2 rounded-xl text-center">
                       <p className="text-[8px] text-slate-400 uppercase mb-1">الرياضيات</p>
                       <input type="number" defaultValue={70+i*2} className="w-full bg-transparent text-center text-xs font-black text-blue-600 outline-none" />
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-xl text-center">
+                    <div className="bg-slate-50 dark:bg-[#202022]/50 p-2 rounded-xl text-center">
                       <p className="text-[8px] text-slate-400 uppercase mb-1">العلوم</p>
                       <input type="number" defaultValue={92-i} className="w-full bg-transparent text-center text-xs font-black text-blue-600 outline-none" />
                     </div>
@@ -844,13 +844,13 @@ const PerformanceAnalyticsSection = () => {
            
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {[1, 2, 3, 4].map(i => (
-               <div key={i} className="flex items-center gap-4 p-4 border border-slate-100 dark:border-slate-800 rounded-2xl relative overflow-hidden group hover:border-indigo-200 transition-all">
+               <div key={i} className="flex items-center gap-4 p-4 border border-slate-100 dark:border-white/5 rounded-2xl relative overflow-hidden group hover:border-indigo-200 transition-all">
                  <div className="absolute top-0 right-0 p-1 bg-emerald-500 text-white rounded-bl-xl text-[8px] font-black uppercase">+12%</div>
                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">ST</div>
                  <div>
                    <p className="text-xs font-black text-slate-800 dark:text-white">طالب متميز {i}</p>
                    <div className="flex items-center gap-2 mt-1">
-                     <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                     <div className="w-16 h-1 bg-slate-100 dark:bg-[#202022] rounded-full">
                        <div className="h-full w-4/5 bg-emerald-500 rounded-full"></div>
                      </div>
                      <span className="text-[8px] font-bold text-emerald-600">جديد: 94%</span>
