@@ -156,6 +156,7 @@ import { AcademicModule } from './components/AcademicModule';
 import { LogisticsModule } from './components/LogisticsModule';
 import { CommunicationModule } from './components/CommunicationModule';
 import { SettingsModule } from './components/SettingsModule';
+import { useFirebaseData } from './hooks/useFirebaseData';
 
 import { generateSmartSchedule } from './services/geminiService';
 
@@ -195,8 +196,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-center transition-colors" dir="rtl">
-          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-10 border border-slate-100 dark:border-slate-800 transition-colors">
-            <div className="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-10 border border-slate-100 dark:border-slate-800 transition-colors">
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={40} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">{errorMessage}</h2>
@@ -220,440 +221,13 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-// --- Components ---
-
-const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active?: boolean, onClick: () => void }) => (
-  <motion.button 
-    whileHover={{ x: 4 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={onClick}
-    className={cn(
-      "flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-300 font-medium group relative overflow-hidden",
-      active 
-        ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/40" 
-        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
-    )}
-  >
-    {active && (
-      <motion.div 
-        layoutId="sidebar-active"
-        className="absolute inset-0 bg-blue-600 -z-10"
-        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-      />
-    )}
-    <Icon size={20} className={cn("transition-transform duration-300 group-hover:scale-110", active ? "text-white" : "text-slate-400 group-hover:text-blue-500")} />
-    <span className="text-sm z-10">{label}</span>
-    {active && (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="absolute left-3 w-1.5 h-1.5 rounded-full bg-white/40"
-      />
-    )}
-  </motion.button>
-);
-
-const SidebarGroup = ({ icon: Icon, label, children, isOpen, onToggle }: { icon: any, label: string, children: React.ReactNode, isOpen: boolean, onToggle: () => void }) => (
-  <div className="space-y-1">
-    <button
-      onClick={onToggle}
-      className={cn(
-        "flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Icon size={20} />
-        <span className="font-medium text-sm">{label}</span>
-      </div>
-      <ChevronDown size={16} className={cn("transition-transform duration-300", isOpen && "rotate-180")} />
-    </button>
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden pr-4 space-y-1"
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
-
-const GreetingSection = ({ user }: { user: any }) => {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'صباح الخير والتميز' : hour < 18 ? 'مرحباً بك مجدداً' : 'مساء الخير والإنتاجية';
-  
-  return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="mb-12 relative overflow-hidden p-8 md:p-12 bg-white dark:bg-slate-900 rounded-[3.5rem] border border-slate-100 dark:border-slate-800 shadow-[0_20px_60px_-15px_rgba(37,99,235,0.05)] transition-all duration-500"
-    >
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/50 dark:from-blue-950/20 to-transparent pointer-events-none" />
-      <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/5 dark:bg-blue-400/5 blur-[100px] rounded-full animate-pulse" />
-      <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/5 dark:bg-indigo-400/5 blur-[100px] rounded-full animate-pulse " style={{ animationDelay: '1s' }} />
-
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10">
-        <div className="space-y-4 md:space-y-6">
-          <div className="inline-flex items-center gap-2.5 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.25em] border border-blue-100/50 dark:border-blue-800/30 shadow-sm">
-            <Sparkles size={12} className="animate-pulse" />
-            نظام إدارة المدرسة المتكامل
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tighter">
-              {greeting}، <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-300">
-                {user?.email?.split('@')[0]}
-              </span> 👋
-            </h1>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 font-medium text-base md:text-xl max-w-xl leading-relaxed">
-            نتمنى لك يوماً دراسياً موفقاً. لقد قمنا بتجهيز ملخص اليوم لمساعدتك على اتخاذ القرارات الصحيحة.
-          </p>
-        </div>
-
-        <div className="flex flex-row md:flex-row gap-3 md:gap-4 shrink-0 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          <div className="p-4 md:p-8 bg-slate-50 dark:bg-slate-800/50 rounded-3xl md:rounded-[2.5rem] border border-slate-100 dark:border-slate-700/50 text-center flex flex-col items-center justify-center min-w-[110px] md:min-w-[160px] group hover:bg-white dark:hover:bg-slate-800 transition-all duration-300">
-             <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white dark:bg-slate-700 shadow-sm mb-2 md:mb-3 group-hover:scale-110 transition-transform">
-               <Clock size={20} className="text-blue-600 dark:text-blue-400" />
-             </div>
-             <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">الوقت الحالي</p>
-             <p className="text-xl md:text-3xl font-black text-slate-800 dark:text-white tabular-nums">{format(new Date(), 'HH:mm')}</p>
-          </div>
-          <div className="p-4 md:p-8 bg-blue-600 rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl shadow-blue-500/20 text-center flex flex-col items-center justify-center min-w-[110px] md:min-w-[160px] group hover:scale-[1.02] transition-all duration-300 text-white">
-             <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur-md mb-2 md:mb-3 group-hover:rotate-6 transition-transform">
-               <Calendar size={20} />
-             </div>
-             <p className="text-[8px] md:text-[10px] font-black text-blue-100 uppercase tracking-widest mb-0.5 md:mb-1">تاريخ اليوم</p>
-             <p className="text-xl md:text-3xl font-black tabular-nums">{format(new Date(), 'dd MMM', { locale: ar })}</p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const QuickAction = ({ icon: Icon, label, onClick, color }: { icon: any, label: string, onClick: () => void, color: string }) => (
-  <motion.button 
-    whileHover={{ y: -8, scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    className="group relative flex flex-col items-center gap-3 md:gap-4 p-4 md:p-8 bg-white dark:bg-slate-900 rounded-3xl md:rounded-[3rem] border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] transition-all duration-500 text-center overflow-hidden h-full justify-center"
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/30 dark:to-slate-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    
-    {/* Background Glow */}
-    <div className={cn("absolute -top-10 -right-10 w-24 h-24 blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-full", color)} />
-
-    <div className={cn("p-4 md:p-6 rounded-xl md:rounded-2xl transition-all duration-700 group-hover:rotate-[15deg] group-hover:scale-110 shadow-xl md:shadow-2xl shadow-current/20 relative z-10", color)}>
-      <Icon size={24} className="text-white md:size-[28px]" />
-    </div>
-    
-    <div className="space-y-1 relative z-10">
-      <span className="block text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors whitespace-nowrap">{label}</span>
-      <div className="w-0 group-hover:w-full h-0.5 bg-blue-500/50 dark:bg-blue-400/50 mx-auto transition-all duration-500 rounded-full" />
-    </div>
-  </motion.button>
-);
-
-const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, value: string | number, icon: any, color: string, trend?: { value: string, positive: boolean } }) => (
-  <motion.div
-    whileHover={{ y: -5 }}
-    className="h-full"
-  >
-    <Card className="relative h-full overflow-hidden group hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all duration-500 border-none bg-white dark:bg-slate-900 shadow-sm rounded-[2.5rem] p-8">
-      {/* Decorative Gradient */}
-      <div className={cn("absolute -top-20 -right-20 w-64 h-64 blur-3xl opacity-5 group-hover:opacity-10 transition-opacity duration-700 rounded-full", color)} />
-      
-      <div className="relative z-10 flex items-start justify-between">
-        <div className="space-y-4">
-          <p className="text-slate-400 dark:text-slate-500 text-xs font-black uppercase tracking-widest">{title}</p>
-          <div className="space-y-1">
-            <h3 className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tighter tabular-nums">
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                {value}
-              </motion.span>
-            </h3>
-            {trend && (
-              <div className="flex items-center gap-1.5 pt-1">
-                <span className={cn(
-                  "text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1",
-                  trend.positive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" : "bg-rose-50 text-rose-600 dark:bg-rose-900/20"
-                )}>
-                  {trend.positive ? <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> : <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />}
-                  {trend.value}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold">مقارنة بالشهر الماضي</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className={cn("p-5 rounded-[1.5rem] shadow-2xl shadow-current/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500", color)}>
-          <Icon size={26} className="text-white" />
-        </div>
-      </div>
-
-      {/* Progress Indicator */}
-      <div className="mt-8 relative z-10">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">معدل الإنجاز</span>
-          <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">75%</span>
-        </div>
-        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: "75%" }}
-            transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-            className={cn("h-full rounded-full", color)}
-          />
-        </div>
-      </div>
-    </Card>
-  </motion.div>
-);
-
-const SortableWidget = ({ id, children }: { id: string, children: React.ReactNode }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 'auto',
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="relative group h-full">
-      <div 
-        {...attributes} 
-        {...listeners}
-        className="absolute top-4 right-4 z-10 p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-      >
-        <GripVertical size={16} className="text-slate-400" />
-      </div>
-      {children}
-    </div>
-  );
-};
-
-const TodoWidget = ({ todos, setTodos, newTodoText, setNewTodoText, collapsed, onToggleCollapse }: { 
-  todos: { id: string; text: string; completed: boolean; reminderTime?: string; reminded?: boolean }[], 
-  setTodos: React.Dispatch<React.SetStateAction<{ id: string; text: string; completed: boolean; reminderTime?: string; reminded?: boolean }[]>>,
-  newTodoText: string,
-  setNewTodoText: React.Dispatch<React.SetStateAction<string>>,
-  collapsed?: boolean,
-  onToggleCollapse?: () => void
-}) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [reminderTime, setReminderTime] = useState('');
-
-  const addTodo = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodoText.trim()) return;
-    const newTodo = {
-      id: Date.now().toString(),
-      text: newTodoText,
-      completed: false,
-      reminderTime: reminderTime || undefined,
-      reminded: false
-    };
-    setTodos([newTodo, ...todos]); // Add to top
-    setNewTodoText('');
-    setReminderTime('');
-  };
-
-  const toggleTodo = (id: string) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos(todos.filter(t => t.id !== id));
-  };
-
-  const clearCompleted = () => {
-    setTodos(todos.filter(t => !t.completed));
-  };
-
-  return (
-    <Card className={cn("flex flex-col transition-all duration-300", collapsed ? "h-auto min-h-0" : "h-full min-h-[400px]")}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <ClipboardList size={18} />
-          </div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white">قائمة المهام</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          {onToggleCollapse && (
-            <button 
-              onClick={onToggleCollapse}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg transition-all"
-            >
-              <ChevronDown size={20} className={cn("transition-transform duration-300", collapsed && "rotate-180")} />
-            </button>
-          )}
-          {!collapsed && todos.some(t => t.completed) && (
-            <button 
-              onClick={clearCompleted}
-              className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-wider"
-            >
-              مسح المكتمل
-            </button>
-          )}
-          {!collapsed && (
-            <button 
-              onClick={() => inputRef.current?.focus()}
-              className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1.5 rounded-lg transition-all"
-            >
-              <PlusCircle size={20} />
-            </button>
-          )}
-        </div>
-      </div>
-      
-      <AnimatePresence>
-        {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden flex flex-col flex-1"
-          >
-            <form onSubmit={addTodo} className="space-y-3 mb-6">
-              <div className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newTodoText}
-                  onChange={(e) => setNewTodoText(e.target.value)}
-                  placeholder="أضف مهمة جديدة..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
-                <button 
-                  type="submit" 
-                  disabled={!newTodoText.trim()}
-                  className="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 dark:shadow-none disabled:opacity-50 disabled:shadow-none"
-                >
-                  <Plus size={20} />
-                </button>
-              </div>
-              <div className="flex items-center gap-2 px-1">
-                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700 transition-all">
-                  <AlarmClock size={14} />
-                  <span className="text-[10px] font-bold">وقت التذكير:</span>
-                  <input 
-                    type="time" 
-                    value={reminderTime}
-                    onChange={(e) => setReminderTime(e.target.value)}
-                    className="bg-transparent border-none text-[10px] font-bold text-slate-600 dark:text-slate-300 focus:ring-0 p-0 w-20"
-                  />
-                </div>
-                {reminderTime && (
-                  <button 
-                    type="button"
-                    onClick={() => setReminderTime('')}
-                    className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1 rounded-md transition-all"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-              {todos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-4">
-                    <CheckCircle2 size={32} className="opacity-20" />
-                  </div>
-                  <p className="text-sm font-medium">لا توجد مهام حالية</p>
-                  <p className="text-[10px] mt-1">ابدأ بإضافة مهامك اليومية هنا</p>
-                </div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {todos.map(todo => (
-                    <motion.div 
-                      key={todo.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className={cn(
-                        "flex items-center gap-3 p-4 rounded-2xl border transition-all group",
-                        todo.completed 
-                          ? "bg-slate-50/50 dark:bg-slate-800/30 border-transparent opacity-60" 
-                          : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm hover:border-blue-200 dark:hover:border-blue-800"
-                      )}
-                    >
-                      <button 
-                        onClick={() => toggleTodo(todo.id)} 
-                        className={cn(
-                          "transition-colors",
-                          todo.completed ? "text-emerald-500" : "text-slate-300 dark:text-slate-600 hover:text-blue-500"
-                        )}
-                      >
-                        {todo.completed ? <CheckCircle2 size={22} /> : <Square size={22} />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <span className={cn(
-                          "block text-sm font-bold transition-all truncate",
-                          todo.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"
-                        )}>
-                          {todo.text}
-                        </span>
-                        {todo.reminderTime && (
-                          <div className={cn(
-                            "flex items-center gap-1 mt-1",
-                            todo.reminded ? "text-rose-500" : "text-blue-500"
-                          )}>
-                            <AlarmClock size={10} />
-                            <span className="text-[9px] font-black">{todo.reminderTime}</span>
-                            {todo.reminded && <span className="text-[8px] font-bold">(تم التذكير)</span>}
-                          </div>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => deleteTodo(todo.id)} 
-                        className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                {todos.filter(t => !t.completed).length} مهام متبقية
-              </span>
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Card>
-  );
-};
+import { SidebarItem } from './components/layout/SidebarItem';
+import { SidebarGroup } from './components/layout/SidebarGroup';
+import { GreetingSection } from './components/dashboard/GreetingSection';
+import { QuickAction } from './components/dashboard/QuickAction';
+import { StatCard } from './components/dashboard/StatCard';
+import { SortableWidget } from './components/dashboard/SortableWidget';
+import { TodoWidget } from './components/dashboard/TodoWidget';
 
 // --- Main App ---
 
@@ -669,6 +243,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { students, teachers, classes, subjects, attendanceRecords, notifications, allSchedules } = useFirebaseData(user, profile, activeTab);
   const [activeSubTab, setActiveSubTab] = useState<string | undefined>(undefined);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isAddStudentModalOpen, setAddStudentModalOpen] = useState(false);
@@ -699,7 +274,6 @@ export default function App() {
   const [newStudent, setNewStudent] = useState({ name: '', email: '', classId: '', section: '', parentName: '', parentPhone: '' });
   const [newClass, setNewClass] = useState({ name: '', gradeId: '', section: '', teacherId: '' });
   const [newTeacher, setNewTeacher] = useState({ name: '', email: '', subjects: [] as string[], phone: '' });
-  const [subjects, setSubjects] = useState<any[]>([]);
   const [isAddSubjectModalOpen, setAddSubjectModalOpen] = useState(false);
   const [isSubjectProfileModalOpen, setSubjectProfileModalOpen] = useState(false);
   const [selectedSubjectForProfile, setSelectedSubjectForProfile] = useState<any>(null);
@@ -802,8 +376,6 @@ export default function App() {
   };
 
   // Attendance Reporting State
-  const [allSchedules, setAllSchedules] = useState<any[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [attendanceFilters, setAttendanceFilters] = useState({
     startDate: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
@@ -923,12 +495,6 @@ export default function App() {
   const [studentToMove, setStudentToMove] = useState<any>(null);
   const [moveData, setMoveData] = useState({ classId: '', section: '' });
 
-  // Data States
-  const [students, setStudents] = useState<any[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-
   useEffect(() => {
     if (isEditScheduleModalOpen && selectedClassForEdit) {
       const q = query(collection(db, 'schedules'), where('classId', '==', selectedClassForEdit));
@@ -1015,46 +581,6 @@ export default function App() {
       }
     }
   }, [activeTab, profile, selectedTeacherIdForAvailability, isTeacherProfileModalOpen, teacherProfileTab]);
-
-  // Real-time Listeners
-  useEffect(() => {
-    if (!user || !profile) return;
-
-    const listeners: (() => void)[] = [];
-
-    // Notifications
-    const qNotif = query(
-      collection(db, 'notifications'), 
-      where('recipientId', '==', user.uid),
-      orderBy('date', 'desc')
-    );
-    listeners.push(onSnapshot(qNotif, (snap) => {
-      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'notifications')));
-
-    // Role-specific data
-    if (profile.role === 'admin') {
-      listeners.push(onSnapshot(collection(db, 'users'), (snap) => {
-        const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setStudents(allUsers.filter((u: any) => u.role === 'student'));
-        setTeachers(allUsers.filter((u: any) => u.role === 'teacher'));
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'users')));
-      listeners.push(onSnapshot(collection(db, 'classes'), (snap) => {
-        setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'classes')));
-      listeners.push(onSnapshot(collection(db, 'attendance'), (snap) => {
-        setAttendanceRecords(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'attendance')));
-      listeners.push(onSnapshot(collection(db, 'subjects'), (snap) => {
-        setSubjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'subjects')));
-      listeners.push(onSnapshot(collection(db, 'schedules'), (snap) => {
-        setAllSchedules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'schedules')));
-    }
-
-    return () => listeners.forEach(l => l());
-  }, [user, profile]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1648,9 +1174,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/20 flex flex-col"
+            className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 flex flex-col"
           >
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-200">
                   <Edit size={24} />
@@ -1671,7 +1197,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="p-6 bg-slate-50 border-b border-slate-100">
+            <div className="p-5 bg-slate-50 border-b border-slate-100">
               <div className="max-w-xs">
                 <label className="block text-sm font-bold text-slate-700 mb-2">اختر الفصل</label>
                 <select 
@@ -1694,7 +1220,7 @@ export default function App() {
                   <p className="text-lg font-bold">يرجى اختيار فصل لعرض جدوله</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-right border-collapse">
                       <thead>
@@ -1772,7 +1298,7 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
           >
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="text-xl font-bold text-slate-800">تعديل الحصة الدراسية</h3>
@@ -1780,7 +1306,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleUpdateSlot} className="p-8 space-y-6">
+            <form onSubmit={handleUpdateSlot} className="p-5 space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">المادة الدراسية</label>
                 <select 
@@ -1866,6 +1392,22 @@ export default function App() {
         ? classes.filter(c => targetClassIds.includes(c.id))
         : classes;
 
+      // Extract only required subjects, and reduce teachers to only those who teach these subjects
+      // If a school has 100 teachers, maybe only 20 cover the subjects for target classes.
+      // But we can't be sure of subjects per class, so at least we can just map the data to a minimalist form
+      const minimalClasses = targetClasses.map(c => ({ id: c.id, n: c.name, g: c.grade }));
+      const minimalSubjects = subjects.map(s => ({ id: s.id, n: s.name }));
+      const minimalTeachers = teachers.map(t => ({ id: t.id, n: t.name, s: t.subjects }));
+      
+      const teacherIds = new Set(minimalTeachers.map(t => t.id));
+      const minimalAvailability: Record<string, any[]> = {};
+      
+      for (const [tId, avail] of Object.entries(allAvailability)) {
+        if (teacherIds.has(tId)) {
+          minimalAvailability[tId] = avail as any[];
+        }
+      }
+
       // 2. Clear existing schedules for target classes
       for (const cls of targetClasses) {
         const q = query(collection(db, 'schedules'), where('classId', '==', cls.id));
@@ -1877,10 +1419,10 @@ export default function App() {
 
       // 3. Call Gemini
       const generatedData = await generateSmartSchedule({
-        classes: targetClasses,
-        teachers,
-        subjects,
-        availability: allAvailability,
+        classes: minimalClasses,
+        teachers: minimalTeachers,
+        subjects: minimalSubjects,
+        availability: minimalAvailability,
         slots: customSlots || [
           { start: '08:00', end: '09:00' },
           { start: '09:00', end: '10:00' },
@@ -2157,7 +1699,7 @@ export default function App() {
       const matchesOldSubject = t.subject && t.subject.toLowerCase().includes(searchLower);
       
       return matchesName || matchesEmail || matchesSubject || matchesOldSubject;
-    }).filter(t => t.role !== 'deleted');
+    }).filter(t => t.status !== 'deleted');
   }, [teachers, searchTerm, subjects]);
 
   const studentStats = useMemo(() => {
@@ -2190,13 +1732,13 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-lg border border-slate-100 dark:border-slate-800 transition-colors"
+          className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[1.5rem] shadow-2xl w-full max-w-lg border border-slate-100 dark:border-slate-800 transition-colors"
         >
           <div className="flex flex-col items-center mb-10">
-            <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white mb-6 shadow-xl shadow-blue-200 dark:shadow-none">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-xl shadow-blue-200 dark:shadow-none">
               <GraduationCap size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-800 dark:text-white text-center mb-2">إدارة المدرسة الذكية</h2>
+            <h2 className="text-2xl font-black text-slate-800 dark:text-white text-center mb-2">إدارة المدرسة الذكية</h2>
             <p className="text-slate-500 dark:text-slate-400 text-center font-medium">سجل دخولك للمتابعة</p>
           </div>
 
@@ -3026,7 +2568,7 @@ export default function App() {
             items={sortableWidgets}
             strategy={rectSortingStrategy}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {sortableWidgets.map((id) => (
                 <div key={id} className="min-w-0">
                   <SortableWidget id={id}>
@@ -3051,7 +2593,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
@@ -3061,7 +2603,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleAddStudent} className="p-8 space-y-6">
+            <form onSubmit={handleAddStudent} className="p-5 space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم الطالب</label>
                 <input 
@@ -3167,7 +2709,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
@@ -3177,7 +2719,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleAddClass} className="p-8 space-y-6">
+            <form onSubmit={handleAddClass} className="p-5 space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم الفصل</label>
                 <input 
@@ -3248,7 +2790,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">
@@ -3258,7 +2800,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleAddTeacher} className="p-8 space-y-6">
+            <form onSubmit={handleAddTeacher} className="p-5 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المعلم</label>
@@ -3350,7 +2892,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">نقل الطالب</h3>
@@ -3358,7 +2900,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleMoveStudent} className="p-8 space-y-6">
+            <form onSubmit={handleMoveStudent} className="p-5 space-y-5">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">نقل الطالب: <span className="font-bold">{studentToMove?.name}</span></p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">الصف الحالي: {getGradeName(studentToMove?.classId)} - شعبة {studentToMove?.section || 'عام'}</p>
@@ -3423,7 +2965,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800"
           >
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">إضافة مادة جديدة</h3>
@@ -3431,7 +2973,7 @@ export default function App() {
                 <X size={24} />
               </button>
             </div>
-            <form onSubmit={handleAddSubject} className="p-8 space-y-6">
+            <form onSubmit={handleAddSubject} className="p-5 space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المادة</label>
                 <input 
@@ -3685,12 +3227,12 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+                className="bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
               >
                 {/* Header */}
-                <div className="bg-white dark:bg-slate-900 p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
+                <div className="bg-white dark:bg-slate-900 p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
                   <div className="flex items-center gap-6">
-                    <div className={`w-20 h-20 rounded-3xl bg-${colorClass}-100 dark:bg-${colorClass}-900/30 text-${colorClass}-600 dark:text-${colorClass}-400 flex items-center justify-center font-bold text-3xl shadow-xl shadow-${colorClass}-100 dark:shadow-none`}>
+                    <div className={`w-16 h-16 rounded-2xl bg-${colorClass}-100 dark:bg-${colorClass}-900/30 text-${colorClass}-600 dark:text-${colorClass}-400 flex items-center justify-center font-bold text-3xl shadow-xl shadow-${colorClass}-100 dark:shadow-none`}>
                       <BookOpen size={40} />
                     </div>
                     <div>
@@ -3729,7 +3271,7 @@ export default function App() {
 
                 {/* Navigation Tabs */}
                 <div className="bg-white dark:bg-slate-900 px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
-                  <div className="flex gap-8 min-w-max">
+                  <div className="flex gap-6 min-w-max">
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
@@ -3760,12 +3302,12 @@ export default function App() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-6"
                       >
                         <div className="md:col-span-2 space-y-8">
                           {/* Stats Grid */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                            <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                               <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-2xl bg-${colorClass}-50 text-${colorClass}-600 flex items-center justify-center`}>
                                   <Users size={24} />
@@ -3776,7 +3318,7 @@ export default function App() {
                                 </div>
                               </div>
                             </div>
-                            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                            <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                               <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                   <LayoutGrid size={24} />
@@ -3790,7 +3332,7 @@ export default function App() {
                           </div>
 
                           {/* Description */}
-                          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                             <h4 className="text-lg font-black text-slate-800 mb-4">وصف المادة</h4>
                             <p className="text-slate-600 leading-relaxed">
                               {selectedSubjectForProfile.description || 'لم يتم إضافة وصف تفصيلي لهذه المادة بعد. يمكنك إضافة وصف يوضح الأهداف التعليمية والمواضيع الرئيسية التي تغطيها المادة.'}
@@ -3798,7 +3340,7 @@ export default function App() {
                           </div>
 
                           {/* Teachers Preview */}
-                          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                          <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                             <div className="flex justify-between items-center mb-6">
                               <h4 className="text-lg font-black text-slate-800">المعلمون</h4>
                               <button onClick={() => setSubjectProfileTab('teachers')} className={`text-${colorClass}-600 text-xs font-bold`}>عرض الكل</button>
@@ -3820,7 +3362,7 @@ export default function App() {
                         </div>
 
                         <div className="space-y-8">
-                          <div className={`bg-gradient-to-br from-${colorClass}-600 to-${colorClass}-700 rounded-[2rem] p-8 text-white shadow-xl shadow-${colorClass}-100`}>
+                          <div className={`bg-gradient-to-br from-${colorClass}-600 to-${colorClass}-700 rounded-[1.5rem] p-6 text-white shadow-xl shadow-${colorClass}-100`}>
                             <h4 className="font-bold mb-4 flex items-center gap-2">
                               <Book size={18} />
                               المنهج الدراسي
@@ -3834,7 +3376,7 @@ export default function App() {
                             </button>
                           </div>
 
-                          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+                          <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-6">
                             <h4 className="font-black text-slate-800 mb-4">تنبيهات المادة</h4>
                             <div className="space-y-4">
                               <div className="flex gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100">
@@ -3857,7 +3399,7 @@ export default function App() {
                       >
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                           {subjectTeachers.map((t: any) => (
-                            <div key={t.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4">
+                            <div key={t.id} className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4">
                               <div className={`w-14 h-14 rounded-2xl bg-${colorClass}-50 text-${colorClass}-600 flex items-center justify-center font-bold text-xl`}>
                                 {t.name.charAt(0)}
                               </div>
@@ -3895,7 +3437,7 @@ export default function App() {
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                       >
                         {subjectClasses.map((c: any) => (
-                          <div key={c.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                          <div key={c.id} className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center gap-4 mb-4">
                               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                                 <Users size={24} />
@@ -3927,7 +3469,7 @@ export default function App() {
                         exit={{ opacity: 0, x: -20 }}
                         className="space-y-8"
                       >
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
                           <div className="flex justify-between items-center mb-8">
                             <h4 className="text-lg font-black text-slate-800">المصادر والمناهج</h4>
                             <button className={`bg-${colorClass}-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2`}>
@@ -4022,7 +3564,7 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
               >
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
                   <h3 className="text-xl font-bold text-slate-800 dark:text-white">
@@ -4035,7 +3577,7 @@ export default function App() {
                     <X size={24} />
                   </button>
                 </div>
-                <form onSubmit={handleAddSubject} className="p-8 space-y-6">
+                <form onSubmit={handleAddSubject} className="p-5 space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">اسم المادة</label>
@@ -4125,7 +3667,7 @@ export default function App() {
                   setSelectedSubjectForProfile(sub);
                   setSubjectProfileModalOpen(true);
                 }}
-                className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 transition-all cursor-pointer group overflow-hidden"
+                className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 transition-all cursor-pointer group overflow-hidden"
               >
                 <div className={`h-2 bg-${colorClass}-500`}></div>
                 <div className="p-6">
@@ -4199,7 +3741,7 @@ export default function App() {
           })}
           
           {filteredSubjects.length === 0 && (
-            <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-slate-400">
+            <div className="col-span-full py-20 text-center bg-white rounded-[1.5rem] border border-dashed border-slate-200 text-slate-400">
               <BookOpen size={48} className="mx-auto mb-4 opacity-10" />
               <p className="font-bold">
                 {searchTerm ? 'لا توجد مواد تطابق بحثك' : 'لا توجد مواد دراسية مضافة حالياً'}
@@ -4233,13 +3775,13 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-slate-50 dark:bg-slate-950 rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+              className="bg-slate-50 dark:bg-slate-950 rounded-2xl md:rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
             >
               {/* Header - Fixed */}
-              <div className="bg-white dark:bg-slate-900 p-4 md:p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 shrink-0 transition-colors">
+              <div className="bg-white dark:bg-slate-900 p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 shrink-0 transition-colors">
                 <div className="flex items-center gap-4 md:gap-6">
                   <div className="relative shrink-0">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-2xl md:text-3xl shadow-xl shadow-blue-200 dark:shadow-none">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-xl md:text-2xl shadow-xl shadow-blue-200 dark:shadow-none">
                       {selectedStudentForProfile.name?.charAt(0)}
                     </div>
                     <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 w-6 h-6 md:w-8 md:h-8 bg-emerald-500 border-2 md:border-4 border-white dark:border-slate-900 rounded-full shadow-sm" title="متصل الآن"></div>
@@ -4278,7 +3820,7 @@ export default function App() {
 
               {/* Navigation Tabs - Fixed */}
               <div className="bg-white dark:bg-slate-900 px-4 md:px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
-                <div className="flex gap-4 md:gap-8 min-w-max">
+                <div className="flex gap-4 md:gap-6 min-w-max">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
@@ -4301,7 +3843,7 @@ export default function App() {
               </div>
 
               {/* Content Area - Scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 min-h-0 bg-slate-50/50 dark:bg-slate-950/50">
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 bg-slate-50/50 dark:bg-slate-950/50">
                 <AnimatePresence mode="wait">
                   {profileTab === 'overview' && (
                     <motion.div 
@@ -4309,28 +3851,28 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-6"
                     >
                       <div className="lg:col-span-2 space-y-6 md:space-y-8">
                         {/* Quick Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                             <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المعدل التراكمي</p>
-                            <h4 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white transition-colors">{stats.gpa}%</h4>
+                            <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.gpa}%</h4>
                             <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-emerald-500" style={{ width: `${stats.gpa}%` }}></div>
                             </div>
                           </div>
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                             <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">نسبة الحضور</p>
-                            <h4 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white transition-colors">{stats.attendanceRate}%</h4>
+                            <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.attendanceRate}%</h4>
                             <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-blue-500" style={{ width: `${stats.attendanceRate}%` }}></div>
                             </div>
                           </div>
-                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                          <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                             <p className="text-slate-400 dark:text-slate-500 text-[10px] md:text-xs font-bold mb-2 uppercase tracking-wider">المهام المكتملة</p>
-                            <h4 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white transition-colors">{stats.completedTasks}/{stats.totalTasks}</h4>
+                            <h4 className="text-2xl md:text-2xl font-black text-slate-800 dark:text-white transition-colors">{stats.completedTasks}/{stats.totalTasks}</h4>
                             <div className="mt-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden transition-colors">
                               <div className="h-full bg-orange-500" style={{ width: `${(stats.completedTasks / (stats.totalTasks || 1)) * 100}%` }}></div>
                             </div>
@@ -4338,7 +3880,7 @@ export default function App() {
                         </div>
 
                         {/* Parent Information */}
-                        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <Users size={20} className="text-blue-600" />
                             بيانات ولي الأمر
@@ -4366,12 +3908,12 @@ export default function App() {
                         </div>
 
                         {/* Recent Activity */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
                           <div className="p-5 md:p-6 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center transition-colors">
                             <h4 className="font-black text-slate-800 dark:text-white">آخر التحديثات</h4>
                             <button className="text-blue-600 dark:text-blue-400 text-xs font-bold">عرض الكل</button>
                           </div>
-                          <div className="p-5 md:p-6 space-y-6">
+                          <div className="p-5 md:p-5 space-y-5">
                             {studentGrades.slice(0, 3).map((g, i) => (
                               <div key={i} className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center transition-colors">
@@ -4393,7 +3935,7 @@ export default function App() {
 
                       {/* Sidebar */}
                       <div className="space-y-8">
-                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-8 text-white shadow-xl shadow-blue-200">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] p-6 text-white shadow-xl shadow-blue-200">
                           <h4 className="font-bold mb-4 flex items-center gap-2 text-blue-100">
                             <Calendar size={18} />
                             الحصة القادمة
@@ -4406,7 +3948,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+                        <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-6">
                           <h4 className="font-black text-slate-800 mb-6 flex items-center gap-2">
                             <ClipboardList size={18} className="text-orange-500" />
                             مهام عاجلة
@@ -4440,7 +3982,7 @@ export default function App() {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-8"
                     >
-                      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                      <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                           <table className="w-full text-right border-collapse">
                             <thead>
@@ -4491,9 +4033,9 @@ export default function App() {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-8"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
-                          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                          <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
                             <table className="w-full text-right">
                               <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
                                 <tr>
@@ -4531,7 +4073,7 @@ export default function App() {
                             </table>
                           </div>
                         </div>
-                        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 space-y-8">
+                        <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-5 space-y-5">
                           <h4 className="font-black text-slate-800">إحصائيات الأداء</h4>
                           <div className="space-y-6">
                             <div>
@@ -4582,7 +4124,7 @@ export default function App() {
                       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                       {studentAssignments.map((task, i) => (
-                        <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+                        <div key={i} className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                           <div className="flex justify-between items-start mb-4">
                             <div className={`px-3 py-1 rounded-full text-[10px] font-black ${
                               task.status === 'pending' ? 'bg-orange-50 text-orange-600' :
@@ -4618,25 +4160,25 @@ export default function App() {
                       className="space-y-8"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
                           <p className="text-slate-400 text-xs font-bold mb-1">أيام الحضور</p>
-                          <h4 className="text-3xl font-black text-emerald-600">{studentAttendance.filter(a => a.status === 'present').length}</h4>
+                          <h4 className="text-2xl font-black text-emerald-600">{studentAttendance.filter(a => a.status === 'present').length}</h4>
                         </div>
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
                           <p className="text-slate-400 text-xs font-bold mb-1">أيام الغياب</p>
-                          <h4 className="text-3xl font-black text-rose-600">{studentAttendance.filter(a => a.status === 'absent').length}</h4>
+                          <h4 className="text-2xl font-black text-rose-600">{studentAttendance.filter(a => a.status === 'absent').length}</h4>
                         </div>
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
                           <p className="text-slate-400 text-xs font-bold mb-1">تأخيرات</p>
-                          <h4 className="text-3xl font-black text-orange-600">{studentAttendance.filter(a => a.status === 'late').length}</h4>
+                          <h4 className="text-2xl font-black text-orange-600">{studentAttendance.filter(a => a.status === 'late').length}</h4>
                         </div>
-                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
                           <p className="text-slate-400 text-xs font-bold mb-1">إجمالي السجلات</p>
-                          <h4 className="text-3xl font-black text-blue-600">{studentAttendance.length}</h4>
+                          <h4 className="text-2xl font-black text-blue-600">{studentAttendance.length}</h4>
                         </div>
                       </div>
 
-                      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                      <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-slate-50">
                           <h4 className="font-black text-slate-800">سجل الحضور التفصيلي</h4>
                         </div>
@@ -4681,10 +4223,10 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
                     >
                       {studentResources.map((res, i) => (
-                        <div key={i} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex items-center justify-between p-6 hover:border-blue-100 transition-all group">
+                        <div key={i} className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden flex items-center justify-between p-6 hover:border-blue-100 transition-all group">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
                               {res.type === 'pdf' ? <FileText size={24} /> : res.type === 'video' ? <Book size={24} /> : <Download size={24} />}
@@ -4714,7 +4256,7 @@ export default function App() {
                       className="space-y-4"
                     >
                       {studentNotifications.map((n, i) => (
-                        <div key={i} className={cn("bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex gap-4 items-start", !n.read && "border-blue-200 bg-blue-50/30")}>
+                        <div key={i} className={cn("bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm flex gap-4 items-start", !n.read && "border-blue-200 bg-blue-50/30")}>
                           <div className={cn("p-2 rounded-xl", n.type === 'urgent' ? "bg-rose-100 text-rose-600" : "bg-blue-100 text-blue-600")}>
                             <Bell size={20} />
                           </div>
@@ -4739,7 +4281,7 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="bg-white rounded-[2rem] border border-slate-100 shadow-sm h-[500px] flex flex-col overflow-hidden"
+                      className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm h-[500px] flex flex-col overflow-hidden"
                     >
                       <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
@@ -4846,12 +4388,12 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+              className="bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
             >
               {/* Header */}
-              <div className="bg-white dark:bg-slate-900 p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
+              <div className="bg-white dark:bg-slate-900 p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shrink-0 transition-colors">
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-blue-200 dark:shadow-none">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-blue-200 dark:shadow-none">
                     {selectedTeacherForProfile.name?.charAt(0)}
                   </div>
                   <div>
@@ -4882,7 +4424,7 @@ export default function App() {
 
               {/* Navigation Tabs */}
               <div className="bg-white dark:bg-slate-900 px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0 transition-colors">
-                <div className="flex gap-8 min-w-max">
+                <div className="flex gap-6 min-w-max">
                   <button
                     onClick={() => setTeacherProfileTab('overview')}
                     className={`py-5 px-1 relative font-bold text-sm transition-all flex items-center gap-2 ${
@@ -4911,7 +4453,7 @@ export default function App() {
               </div>
 
               {/* Content Area */}
-              <div className="flex-1 overflow-y-auto p-8 min-h-0">
+              <div className="flex-1 overflow-y-auto p-6 min-h-0">
                 <AnimatePresence mode="wait">
                   {teacherProfileTab === 'overview' && (
                     <motion.div 
@@ -4919,11 +4461,11 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                      className="grid grid-cols-1 md:grid-cols-3 gap-6"
                     >
                       <div className="md:col-span-2 space-y-8">
                         {/* Subjects Section */}
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <BookOpen size={20} className="text-blue-600 dark:text-blue-400" />
                             المواد الدراسية المسندة
@@ -4951,7 +4493,7 @@ export default function App() {
                         </div>
 
                         {/* Schedule Placeholder */}
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                             <Calendar size={20} className="text-emerald-600 dark:text-emerald-400" />
                             الجدول الأسبوعي
@@ -4964,7 +4506,7 @@ export default function App() {
 
                       <div className="space-y-8">
                         {/* Quick Stats */}
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                           <h4 className="text-lg font-black text-slate-800 dark:text-white mb-6">إحصائيات سريعة</h4>
                           <div className="space-y-6">
                             <div>
@@ -4989,7 +4531,7 @@ export default function App() {
                         </div>
 
                         {/* Contact Info */}
-                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-[2rem] p-8 text-white shadow-xl">
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-[1.5rem] p-6 text-white shadow-xl">
                           <h4 className="font-bold mb-6 flex items-center gap-2 text-slate-300 dark:text-slate-400">
                             <Info size={18} />
                             معلومات التواصل
@@ -5028,7 +4570,7 @@ export default function App() {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
                         <div>
                           <h4 className="text-lg font-black text-slate-800 dark:text-white">تفضيلات الجدول الدراسي</h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">حدد الأوقات المناسبة والمفضلة وغير المناسبة للتدريس</p>
@@ -5058,7 +4600,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm overflow-x-auto transition-colors">
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm overflow-x-auto transition-colors">
                         <table className="w-full text-right border-collapse min-w-[600px]">
                           <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -5100,7 +4642,7 @@ export default function App() {
                         </table>
                       </div>
                       
-                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-6 rounded-3xl flex items-start gap-4 transition-colors">
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-6 rounded-2xl flex items-start gap-4 transition-colors">
                         <Info className="text-amber-600 dark:text-amber-400 shrink-0" size={24} />
                         <div className="text-sm text-amber-800 dark:text-amber-200">
                           <p className="font-bold mb-1">كيفية الاستخدام:</p>
@@ -5148,9 +4690,9 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
+            className="bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-white/20 dark:border-slate-800 flex flex-col transition-colors"
           >
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-none">
                   <Calendar size={24} />
@@ -5173,7 +4715,7 @@ export default function App() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-8">
-              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
                 <div className="overflow-x-auto">
                   <table className="w-full text-right border-collapse">
                     <thead>
@@ -5674,7 +5216,7 @@ export default function App() {
           "fixed lg:sticky lg:translate-x-0"
         )}
       >
-        <div className="p-6 flex flex-col h-full">
+        <div className="p-5 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-10 px-2">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
               <GraduationCap size={24} className="text-white" />
@@ -5799,7 +5341,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-8">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
               <button
                 onClick={() => setDarkMode(!darkMode)}
@@ -5832,7 +5374,7 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="p-4 md:p-6 lg:p-10 max-w-[1600px] mx-auto w-full transition-all duration-500">
+        <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto w-full transition-all duration-500">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab + (activeSubTab || '')}

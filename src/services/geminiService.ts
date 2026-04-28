@@ -11,18 +11,23 @@ export async function generateSmartSchedule(data: {
   constraints?: string
 }) {
   const prompt = `
-    You are a school scheduling system. Your goal is to generate a weekly school schedule for the following classes, subjects, and teachers while respecting their availability.
+    You are a school scheduling system. Generate a weekly school schedule for the classes, subjects, and teachers provided, respecting teacher availability.
+    
+    To save context space, keys have been minified:
+    - n = name
+    - g = grade
+    - s = subjects
 
     DATA:
-    - Classes: ${JSON.stringify(data.classes.map(c => ({ id: c.id, name: c.name, grade: c.grade })))}
-    - Subjects: ${JSON.stringify(data.subjects.map(s => ({ id: s.id, name: s.name })))}
-    - Teachers: ${JSON.stringify(data.teachers.map(t => ({ id: t.id, name: t.name, subjects: t.subjects })))}
+    - Classes: ${JSON.stringify(data.classes)}
+    - Subjects: ${JSON.stringify(data.subjects)}
+    - Teachers: ${JSON.stringify(data.teachers)}
     - Teacher Availability: ${JSON.stringify(data.availability)}
     - Available Time Slots: ${JSON.stringify(data.slots)}
 
     CONSTRAINTS:
     - Days: Sunday, Monday, Tuesday, Wednesday, Thursday
-    - For each day, you MUST fill every available time slot provided in the Data section for each class.
+    - For each day, MUST fill every available time slot provided in the Data section for each class.
     - Each subject should appear at least twice a week per class if possible.
     - No teacher should be double-booked in the same slot.
     ${data.constraints ? `- Extra Constraints: ${data.constraints}` : ''}
@@ -31,7 +36,7 @@ export async function generateSmartSchedule(data: {
     Return ONLY a JSON array of objects with the following structure:
     [{ "classId": "...", "day": "...", "subject": "...", "teacherId": "...", "startTime": "...", "endTime": "...", "room": "..." }]
 
-    IMPORTANT: Response must be valid JSON only.
+    IMPORTANT: Response must be valid JSON only. Do not include markdown formatting or backticks.
   `;
 
   try {
